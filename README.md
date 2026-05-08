@@ -385,12 +385,14 @@ Root project:
 | `npm run db:generate` | Generate the Prisma client |
 | `npm run db:push` | Push the Prisma schema to MongoDB |
 | `npm run db:studio` | Open Prisma Studio |
+| `npm run db:test` | Test the MongoDB connection and show record counts |
 
 Backend project:
 
 | Command | Purpose |
 | --- | --- |
 | `npm start` | Start the Express API server |
+| `npm run db:test` | Test the MongoDB connection from the backend |
 | `npm run logs` | View combined backend logs |
 | `npm run logs:access` | View access logs |
 | `npm run logs:error` | View error logs |

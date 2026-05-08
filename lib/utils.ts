@@ -1,21 +1,21 @@
 export const categoryMenuList = [
   {
     id: 1,
-    title: "Smart Phones",
+    title: "Electronics",
     src: "/smart phone icon.png",
-    href: "/shop/smart-phones"
+    href: "/shop/electronics"
   },
   {
     id: 2,
-    title: "Tablets",
+    title: "Laptops",
     src: "/tablet icon.png",
-    href: "/shop/tablets"
+    href: "/shop/laptops"
   },
   {
     id: 3,
-    title: "Mouses",
+    title: "Audio",
     src: "/mouse icon.png",
-    href: "/shop/mouses"
+    href: "/shop/audio"
   },
   {
     id: 4,
@@ -25,39 +25,9 @@ export const categoryMenuList = [
   },
   {
     id: 5,
-    title: "Smart Watches",
+    title: "Televisions",
     src: "/smart watch.png",
-    href: "/shop/watches"
-  },
-  {
-    id: 6,
-    title: "Laptops",
-    src: "/laptop icon.png",
-    href: "/shop/laptops"
-  },
-  {
-    id: 7,
-    title: "PCs",
-    src: "/pc icon.png",
-    href: "/shop/computers"
-  },
-  {
-    id: 8,
-    title: "Printers",
-    src: "/printers icon.png",
-    href: "/shop/printers"
-  },
-  {
-    id: 9,
-    title: "Earbuds",
-    src: "/ear buds icon.png",
-    href: "/shop/earbuds"
-  },
-  {
-    id: 10,
-    title: "Head Phones",
-    src: "/headphone icon.png",
-    href: "/shop/headphones"
+    href: "/shop/televisions"
   },
 ];
 

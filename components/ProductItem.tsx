@@ -14,6 +14,11 @@ import Link from "next/link";
 
 import { sanitize } from "@/lib/sanitize";
 
+const getProductImageSrc = (image?: string) => {
+  if (!image) return "/product_placeholder.jpg";
+  return image.startsWith("http") || image.startsWith("/") ? image : `/${image}`;
+};
+
 const ProductItem = ({
   product,
   color,
@@ -25,11 +30,7 @@ const ProductItem = ({
     <div className="flex flex-col items-center gap-y-2">
       <Link href={`/product/${product.slug}`}>
         <Image
-          src={
-            product.mainImage
-              ? `/${product.mainImage}`
-              : "/product_placeholder.jpg"
-          }
+          src={getProductImageSrc(product.mainImage)}
           width="0"
           height="0"
           sizes="100vw"

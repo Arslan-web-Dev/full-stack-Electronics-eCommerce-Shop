@@ -219,8 +219,22 @@ export const useNotifications = () => {
  * Hook for real-time unread count (for header badge)
  */
 export const useUnreadCount = () => {
+  const [session, setSession] = useState<any>(null);
   const { unreadCount, setUnreadCount } = useNotificationStore();
-  const { data: session } = useSession();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!session?.user?.email) return;

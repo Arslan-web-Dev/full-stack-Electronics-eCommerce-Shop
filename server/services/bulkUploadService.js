@@ -23,7 +23,7 @@ function validateRow(row) {
 
   clean.title = title;
   clean.slug = slug;
-  clean.price = Math.round(price * 100) / 100; // Keep 2 decimal places
+  clean.price = Math.round(price);
   clean.categoryId = categoryId;
   clean.inStock = Math.floor(inStock); // Integer stock quantity
 
@@ -75,6 +75,20 @@ async function createBatchWithItems(tx, batchId, validRows, errorRows) {
     categoryMap.set(cat.name.toLowerCase(), cat.id); // name -> UUID
   });
 
+  let defaultMerchant = await tx.merchant.findFirst({
+    where: { name: "Default Merchant" },
+  });
+
+  if (!defaultMerchant) {
+    defaultMerchant = await tx.merchant.create({
+      data: {
+        name: "Default Merchant",
+        description: "Default merchant used for CSV bulk imports.",
+        status: "ACTIVE",
+      },
+    });
+  }
+
   let success = 0;
   let failed = 0;
 
@@ -115,6 +129,7 @@ async function createBatchWithItems(tx, batchId, validRows, errorRows) {
           manufacturer: row.manufacturer ?? "",
           mainImage: row.mainImage ?? "",
           categoryId: resolvedCategoryId, // Use resolved category ID
+          merchantId: defaultMerchant.id,
           inStock: row.inStock,
         },
       });

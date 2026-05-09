@@ -27,43 +27,45 @@ const ProductItem = ({
   color: string;
 }) => {
   return (
-    <div className="flex flex-col items-center gap-y-2">
-      <Link href={`/product/${product.slug}`}>
-        <Image
-          src={getProductImageSrc(product.mainImage)}
-          width="0"
-          height="0"
-          sizes="100vw"
-          className="w-auto h-[300px]"
-          alt={sanitize(product?.title) || "Product image"}
-        />
-      </Link>
-      <Link
-        href={`/product/${product.slug}`}
-        className={
-          color === "black"
-            ? `text-xl text-black font-normal mt-2 uppercase`
-            : `text-xl text-white font-normal mt-2 uppercase`
-        }
-      >
-        {sanitize(product.title)}
-      </Link>
-      <p
-        className={
-          color === "black"
-            ? "text-lg text-black font-semibold"
-            : "text-lg text-white font-semibold"
-        }
-      >
-        ${product.price}
-      </p>
+    <div className="group relative flex flex-col items-center gap-y-4 p-6 rounded-3xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 glass-effect w-full max-w-[320px]">
+      <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-slate-100 flex items-center justify-center">
+        <Link href={`/product/${product.slug}`} className="w-full h-full flex items-center justify-center">
+          <Image
+            src={getProductImageSrc(product.mainImage)}
+            width={240}
+            height={240}
+            className="object-contain transition-transform duration-700 group-hover:scale-110"
+            alt={sanitize(product?.title) || "Product image"}
+          />
+        </Link>
+        {/* Quick action badge */}
+        <div className="absolute top-4 right-4 opacity-0 translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+          <span className="bg-primary-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+            New
+          </span>
+        </div>
+      </div>
 
-  
+      <div className="flex flex-col items-center text-center gap-y-1 w-full">
+        <Link
+          href={`/product/${product.slug}`}
+          className="text-lg text-slate-800 font-bold uppercase tracking-tight line-clamp-1 hover:text-primary-600 transition-colors"
+        >
+          {sanitize(product.title)}
+        </Link>
+        <p className="text-2xl text-primary-600 font-black">
+          ${product.price}
+        </p>
+      </div>
+
       <Link
         href={`/product/${product?.slug}`}
-        className="block flex justify-center items-center w-full uppercase bg-white px-0 py-2 text-base border border-black border-gray-300 font-bold text-blue-600 shadow-sm hover:bg-black hover:bg-gray-100 focus:outline-none focus:ring-2"
+        className="w-full flex justify-center items-center gap-x-2 py-3 rounded-xl bg-slate-900 text-white font-bold transition-all hover:bg-primary-600 shadow-md active:scale-95"
       >
-        <p>View product</p>
+        <span>View product</span>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="9 5l7 7-7 7" />
+        </svg>
       </Link>
     </div>
   );

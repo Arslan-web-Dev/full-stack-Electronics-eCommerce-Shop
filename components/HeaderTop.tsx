@@ -43,7 +43,7 @@ const HeaderTop = () => {
     window.location.href = "/";
   };
   return (
-    <div className="h-10 text-white bg-blue-500 max-lg:px-5 max-lg:h-16 max-[573px]:px-0">
+    <div className="h-10 text-white bg-slate-900 max-lg:px-5 max-lg:h-16 max-[573px]:px-0 border-b border-slate-800">
       <div className="flex justify-between h-full max-lg:flex-col max-lg:justify-center max-lg:items-center max-w-screen-2xl mx-auto px-12 max-[573px]:px-0">
         <ul className="flex items-center h-full gap-x-5 max-[370px]:text-sm max-[370px]:gap-x-2">
           <li className="flex items-center gap-x-2 font-semibold">

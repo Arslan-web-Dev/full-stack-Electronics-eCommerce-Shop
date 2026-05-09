@@ -93,15 +93,17 @@ const Header = () => {
   }, [session?.user?.email, wishlist.length]);
 
   return (
-    <header className="bg-white">
+    <header className="sticky top-0 z-50 w-full transition-all duration-300">
       <HeaderTop />
       {pathname.startsWith("/admin") === false && (
-        <div className="h-32 bg-white flex items-center justify-between px-16 max-[1320px]:px-16 max-md:px-6 max-lg:flex-col max-lg:gap-y-7 max-lg:justify-center max-lg:h-60 max-w-screen-2xl mx-auto">
-          <Link href="/">
-            <img src="/logo v1 svg.svg" width={300} height={300} alt="singitronic logo" className="relative right-5 max-[1023px]:w-56" />
+        <div className="glass-effect h-24 flex items-center justify-between px-16 max-md:px-6 max-lg:flex-col max-lg:gap-y-4 max-lg:justify-center max-lg:h-auto max-lg:py-4 max-w-screen-2xl mx-auto rounded-b-2xl mt-0 shadow-lg border-t-0">
+          <Link href="/" className="hover:opacity-80 transition-opacity">
+            <img src="/logo v1 svg.svg" width={220} height={220} alt="singitronic logo" className="max-[1023px]:w-48" />
           </Link>
-          <SearchInput />
-          <div className="flex gap-x-10 items-center">
+          <div className="flex-1 max-w-2xl mx-10 max-lg:mx-0 max-lg:w-full">
+            <SearchInput />
+          </div>
+          <div className="flex gap-x-8 items-center">
             <NotificationBell />
             <HeartElement wishQuantity={wishQuantity} />
             <CartElement />

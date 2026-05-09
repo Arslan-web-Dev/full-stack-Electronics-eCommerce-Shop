@@ -14,32 +14,52 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <footer className="bg-white" aria-labelledby="footer-heading">
+    <footer className="bg-slate-950 text-slate-300" aria-labelledby="footer-heading">
       <div>
         <h2 id="footer-heading" className="sr-only">
           Footer
         </h2>
         <div className="mx-auto max-w-screen-2xl px-6 lg:px-8 pt-24 pb-14">
-          <div className="xl:grid xl:grid-cols-3 xl:gap-8">
-            <Image
-              src="/logo v1.png"
-              alt="Singitronic logo"
-              width={250}
-              height={250}
-              className="h-auto w-auto"
-            />
+          <div className="xl:grid xl:grid-cols-3 xl:gap-12">
+            <div className="flex flex-col gap-y-6">
+              <Image
+                src="/logo v1 svg.svg"
+                alt="Singitronic logo"
+                width={200}
+                height={200}
+                className="h-auto w-auto brightness-0 invert"
+              />
+              <p className="text-slate-400 max-w-xs leading-relaxed">
+                Your premier destination for the latest in smart electronics and technology. Innovating your lifestyle, one gadget at a time.
+              </p>
+              <div className="flex gap-x-4 mt-2">
+                {/* Social icons placeholder */}
+                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary-600 transition-colors cursor-pointer">
+                  <span className="sr-only">Facebook</span>
+                  <div className="w-4 h-4 bg-white/20 rounded-sm"></div>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary-600 transition-colors cursor-pointer">
+                  <span className="sr-only">Twitter</span>
+                  <div className="w-4 h-4 bg-white/20 rounded-sm"></div>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary-600 transition-colors cursor-pointer">
+                  <span className="sr-only">Instagram</span>
+                  <div className="w-4 h-4 bg-white/20 rounded-sm"></div>
+                </div>
+              </div>
+            </div>
             <div className="mt-16 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
               <div className="md:grid md:grid-cols-2 md:gap-8">
                 <div>
-                  <h3 className="text-lg font-bold leading-6 text-blue-600">
-                    Sale
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-primary-400 leading-6">
+                    Collection
                   </h3>
                   <ul role="list" className="mt-6 space-y-4">
                     {navigation.sale.map((item) => (
                       <li key={item.name}>
                         <a
                           href={item.href}
-                          className="text-sm leading-6 text-black hover:text-gray-700"
+                          className="text-sm leading-6 text-slate-400 hover:text-white transition-colors"
                         >
                           {item.name}
                         </a>
@@ -48,15 +68,15 @@ const Footer = () => {
                   </ul>
                 </div>
                 <div className="mt-10 md:mt-0">
-                  <h3 className="text-base font-bold leading-6 text-blue-600">
-                    About Us
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-primary-400 leading-6">
+                    Company
                   </h3>
                   <ul role="list" className="mt-6 space-y-4">
                     {navigation.about.map((item) => (
                       <li key={item.name}>
                         <a
                           href={item.href}
-                          className="text-sm leading-6 text-black hover:text-gray-700"
+                          className="text-sm leading-6 text-slate-400 hover:text-white transition-colors"
                         >
                           {item.name}
                         </a>
@@ -67,15 +87,15 @@ const Footer = () => {
               </div>
               <div className="md:grid md:grid-cols-2 md:gap-8">
                 <div>
-                  <h3 className="text-base font-bold leading-6 text-blue-600">
-                    Buying
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-primary-400 leading-6">
+                    Customer Service
                   </h3>
                   <ul role="list" className="mt-6 space-y-4">
                     {navigation.buy.map((item) => (
                       <li key={item.name}>
                         <a
                           href={item.href}
-                          className="text-sm leading-6 text-black hover:text-gray-700"
+                          className="text-sm leading-6 text-slate-400 hover:text-white transition-colors"
                         >
                           {item.name}
                         </a>
@@ -84,15 +104,15 @@ const Footer = () => {
                   </ul>
                 </div>
                 <div className="mt-10 md:mt-0">
-                  <h3 className="text-base font-bold leading-6 text-blue-600">
-                    Support
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-primary-400 leading-6">
+                    Resources
                   </h3>
                   <ul role="list" className="mt-6 space-y-4">
                     {navigation.help.map((item) => (
                       <li key={item.name}>
                         <a
                           href={item.href}
-                          className="text-sm leading-6 text-black hover:text-gray-700"
+                          className="text-sm leading-6 text-slate-400 hover:text-white transition-colors"
                         >
                           {item.name}
                         </a>
@@ -101,6 +121,15 @@ const Footer = () => {
                   </ul>
                 </div>
               </div>
+            </div>
+          </div>
+          <div className="mt-16 border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xs leading-5 text-slate-500">
+              &copy; {new Date().getFullYear()} Singitronic. All rights reserved.
+            </p>
+            <div className="flex gap-x-6">
+               <span className="text-xs text-slate-600">Privacy Policy</span>
+               <span className="text-xs text-slate-600">Terms of Service</span>
             </div>
           </div>
         </div>

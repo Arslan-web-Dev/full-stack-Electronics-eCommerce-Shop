@@ -138,7 +138,7 @@ const NotificationsPage = () => {
   };
 
   // Loading state
-  if (status === 'loading') {
+  if (authStatus === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <FaSpinner className="animate-spin text-4xl text-blue-500" />

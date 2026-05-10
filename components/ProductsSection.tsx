@@ -11,23 +11,21 @@
 import React from "react";
 import ProductItem from "./ProductItem";
 import Heading from "./Heading";
-import apiClient from "@/lib/api";
+import prisma from "@/lib/prisma";
 
 const ProductsSection = async () => {
   let products = [];
   
   try {
-    // sending API request for getting all products
-    const data = await apiClient.get("/api/products");
-    
-    if (!data.ok) {
-      console.error('Failed to fetch products:', data.statusText);
-      products = [];
-    } else {
-      const result = await data.json();
-      // Ensure products is an array
-      products = Array.isArray(result) ? result : [];
-    }
+    // Direct database call (Faster and avoids ECONNREFUSED during build)
+    products = await prisma.product.findMany({
+      take: 12, // limiting to 12 featured products
+      include: {
+        category: {
+          select: { name: true }
+        }
+      }
+    });
   } catch (error) {
     console.error('Error fetching products:', error);
     products = [];

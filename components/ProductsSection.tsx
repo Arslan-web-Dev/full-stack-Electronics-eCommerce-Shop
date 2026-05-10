@@ -17,17 +17,19 @@ const ProductsSection = async () => {
   let products: any[] = [];
   
   try {
-    // Direct database call (Faster and avoids ECONNREFUSED during build)
+    console.log("DATABASE_URL present:", !!process.env.DATABASE_URL);
+    // Direct database call
     products = await prisma.product.findMany({
-      take: 12, // limiting to 12 featured products
+      take: 12,
       include: {
         category: {
           select: { name: true }
         }
       }
     });
-  } catch (error) {
-    console.error('Error fetching products:', error);
+    console.log("Products fetched count:", products.length);
+  } catch (error: any) {
+    console.error('Error fetching products in ProductsSection:', error.message);
     products = [];
   }
 

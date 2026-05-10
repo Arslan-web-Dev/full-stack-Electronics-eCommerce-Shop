@@ -10,7 +10,7 @@
 
 import React from "react";
 import ProductItem from "./ProductItem";
-import apiClient from "@/lib/api";
+import prisma from "@/lib/prisma";
 
 const Products = async ({ params, searchParams }: { params: { slug?: string[] }, searchParams: { [key: string]: string | string[] | undefined } }) => {
   // getting all data from URL slug and preparing everything for sending GET request
@@ -38,30 +38,51 @@ const Products = async ({ params, searchParams }: { params: { slug?: string[] },
     stockMode = "gt";
   }
 
-  let products = [];
+  let products: any[] = [];
 
   try {
-    // sending API request with filtering, sorting and pagination for getting all products
-    const data = await apiClient.get(`/api/products?filters[price][$lte]=${
-        searchParams?.price || 3000
-      }&filters[rating][$gte]=${
-        Number(searchParams?.rating) || 0
-      }&filters[inStock][$${stockMode}]=1&${
-        params?.slug?.length! > 0
-          ? `filters[category][$equals]=${params?.slug}&`
-          : ""
-      }sort=${searchParams?.sort}&page=${page}`
-    );
+    const priceLimit = Number(searchParams?.price) || 3000;
+    const ratingLimit = Number(searchParams?.rating) || 0;
+    const categoryName = params?.slug?.[0] || "";
 
-    if (!data.ok) {
-      console.error('Failed to fetch products:', data.statusText);
-      products = [];
-    } else {
-      const result = await data.json();
-      products = Array.isArray(result) ? result : [];
+    const where: any = {
+      price: { lte: priceLimit },
+      rating: { gte: ratingLimit },
+    };
+
+    // Stock filtering
+    if (inStockNum === 1 && outOfStockNum === 0) {
+      where.inStock = { gt: 0 };
+    } else if (outOfStockNum === 1 && inStockNum === 0) {
+      where.inStock = { equals: 0 };
     }
+
+    // Category filtering
+    if (categoryName) {
+      where.category = { name: categoryName };
+    }
+
+    // Sorting
+    const sort: any = {};
+    const sortBy = searchParams?.sort || "defaultSort";
+    switch (sortBy) {
+      case "titleAsc": sort.title = "asc"; break;
+      case "titleDesc": sort.title = "desc"; break;
+      case "lowPrice": sort.price = "asc"; break;
+      case "highPrice": sort.price = "desc"; break;
+    }
+
+    products = await prisma.product.findMany({
+      where,
+      skip: (page - 1) * 12,
+      take: 12,
+      orderBy: sort,
+      include: {
+        category: { select: { name: true } }
+      }
+    });
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Error fetching products in Products component:', error);
     products = [];
   }
 

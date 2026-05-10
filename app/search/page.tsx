@@ -1,28 +1,32 @@
 import { ProductItem, SectionTitle } from "@/components";
-import apiClient from "@/lib/api";
 import React from "react";
+import prisma from "@/lib/prisma";
 import { sanitize } from "@/lib/sanitize";
 
 interface Props {
   searchParams: { search: string };
 }
 
-// sending api request for search results for a given search text
+import prisma from "@/lib/prisma";
+
 const SearchPage = async ({ searchParams }: Props) => {
   const sp = await searchParams;
-  let products = [];
+  let products: any[] = [];
+  const searchQuery = sp?.search || "";
 
   try {
-    const data = await apiClient.get(
-      `/api/search?query=${sp?.search || ""}`
-    );
-
-    if (!data.ok) {
-      console.error('Failed to fetch search results:', data.statusText);
-      products = [];
-    } else {
-      const result = await data.json();
-      products = Array.isArray(result) ? result : [];
+    if (searchQuery) {
+      products = await prisma.product.findMany({
+        where: {
+          OR: [
+            { title: { contains: searchQuery, mode: 'insensitive' } },
+            { description: { contains: searchQuery, mode: 'insensitive' } }
+          ]
+        },
+        include: {
+          category: { select: { name: true } }
+        }
+      });
     }
   } catch (error) {
     console.error('Error fetching search results:', error);

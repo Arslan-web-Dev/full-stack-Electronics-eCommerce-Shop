@@ -6,10 +6,10 @@ import {
   SingleProductDynamicFields,
   
 } from "@/components";
-import apiClient from "@/lib/api";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import React from "react";
+import prisma from "@/lib/prisma";
 import { FaSquareFacebook } from "react-icons/fa6";
 import { FaSquareXTwitter } from "react-icons/fa6";
 import { FaSquarePinterest } from "react-icons/fa6";
@@ -32,17 +32,24 @@ const getProductImageSrc = (image?: string) => {
 
 const SingleProductPage = async ({ params }: SingleProductPageProps) => {
   const paramsAwaited = await params;
-  // sending API request for a single product with a given product slug
-  const data = await apiClient.get(
-    `/api/slugs/${paramsAwaited?.productSlug}`
-  );
-  const product = await data.json();
+  
+  // Fetch product by slug directly from DB
+  const product = await prisma.product.findUnique({
+    where: { slug: paramsAwaited.productSlug },
+    include: {
+      category: true,
+      merchant: true
+    }
+  });
 
-  // sending API request for more than 1 product image if it exists
-  const imagesData = await apiClient.get(
-    `/api/images/${paramsAwaited?.id}`
-  );
-  const images = await imagesData.json();
+  if (!product) {
+    notFound();
+  }
+
+  // Fetch product images
+  const images = await prisma.image.findMany({
+    where: { productID: product.id }
+  });
 
   if (!product || product.error) {
     notFound();

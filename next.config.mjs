@@ -18,6 +18,11 @@ const nextConfig = {
             hostname: 'images.unsplash.com',
             port: ""
           },
+          {
+            protocol: 'https',
+            hostname: 'raw.githubusercontent.com',
+            port: ""
+          },
         ],
       },
     env: {

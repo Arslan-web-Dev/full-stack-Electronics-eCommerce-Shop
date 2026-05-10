@@ -12,7 +12,7 @@ const CreatorPage = () => {
           <div className="relative p-1 rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 shadow-2xl">
             <div className="relative w-48 h-48 rounded-full overflow-hidden border-4 border-white bg-slate-100">
                <Image 
-                src="https://raw.githubusercontent.com/Arslan-web-Dev/My-projects-picks/refs/heads/main/personalpicks.png"
+                src="https://raw.githubusercontent.com/Arslan-web-Dev/My-projects-picks/main/personalpicks.png"
                 alt="Muhammad Arslan" 
                 fill
                 className="object-cover"

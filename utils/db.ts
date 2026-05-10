@@ -6,13 +6,19 @@ const prismaClientSingleton = () => {
   }
 
   const databaseUrl = process.env.DATABASE_URL;
-  const url = new URL(databaseUrl);
-
-  if (process.env.NODE_ENV === "development") {
-    console.log(
-      `Database connection: ${url.protocol}//${url.hostname}/${url.pathname.replace("/", "") || "default"}`
-    );
-    console.log("Database provider: MongoDB via Prisma");
+  let url;
+  try {
+    url = new URL(databaseUrl);
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `Database connection: ${url.protocol}//${url.hostname}/${url.pathname.replace("/", "") || "default"}`
+      );
+      console.log("Database provider: MongoDB via Prisma");
+    }
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") {
+      console.log("Database connection: Custom format");
+    }
   }
 
   return new PrismaClient({

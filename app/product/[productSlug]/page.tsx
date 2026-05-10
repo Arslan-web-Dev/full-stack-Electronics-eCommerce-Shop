@@ -51,7 +51,7 @@ const SingleProductPage = async ({ params }: SingleProductPageProps) => {
     where: { productID: product.id }
   });
 
-  if (!product || product.error) {
+  if (!product) {
     notFound();
   }
 

@@ -1,12 +1,4 @@
-// *********************
-// Role of the component: Bulk upload products page for admin dashboard
-// Name of the component: BulkUpload.tsx
-// Developer: Aleksandar Kuzmanovic (modified)
-// Version: 1.0
-// Component call: <BulkUpload />
-// Input parameters: no input parameters
-// Output: bulk upload page for admin dashboard
-// *********************
+
 
 "use client";
 import { DashboardSidebar } from "@/components";

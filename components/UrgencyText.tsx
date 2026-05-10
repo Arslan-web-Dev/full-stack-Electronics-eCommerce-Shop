@@ -1,6 +1,3 @@
-// *********************
-// IN DEVELOPMENT
-// *********************
 
 import React from 'react'
 

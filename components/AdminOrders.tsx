@@ -1,14 +1,5 @@
 "use client";
 
-// *********************
-// Role of the component: Component that displays all orders on admin dashboard page
-// Name of the component: AdminOrders.tsx
-// Developer: Aleksandar Kuzmanovic
-// Version: 1.0
-// Component call: <AdminOrders />
-// Input parameters: No input parameters
-// Output: Table with all orders
-// *********************
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -115,3 +106,4 @@ const AdminOrders = () => {
 };
 
 export default AdminOrders;
+

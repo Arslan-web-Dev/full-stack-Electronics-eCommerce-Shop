@@ -1,12 +1,3 @@
-// *********************
-// Role of the component: Sidebar on admin dashboard page
-// Name of the component: DashboardSidebar.tsx
-// Developer: Aleksandar Kuzmanovic
-// Version: 1.0
-// Component call: <DashboardSidebar />
-// Input parameters: no input parameters
-// Output: sidebar for admin dashboard page
-// *********************
 
 import React from "react";
 import { MdDashboard } from "react-icons/md";
@@ -76,3 +67,4 @@ const DashboardSidebar = () => {
 };
 
 export default DashboardSidebar;
+

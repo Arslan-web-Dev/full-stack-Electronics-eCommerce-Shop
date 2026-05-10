@@ -1,12 +1,3 @@
-// *********************
-// Role of the component: Topbar of the header
-// Name of the component: HeaderTop.tsx
-// Developer: Aleksandar Kuzmanovic
-// Version: 1.0
-// Component call: <HeaderTop />
-// Input parameters: no input parameters
-// Output: topbar with phone, email and login and register links
-// *********************
 
 "use client";
 import Link from "next/link";
@@ -48,11 +39,13 @@ const HeaderTop = () => {
         <ul className="flex items-center h-full gap-x-5 max-[370px]:text-sm max-[370px]:gap-x-2">
           <li className="flex items-center gap-x-2 font-semibold">
             <FaHeadphones className="text-white" />
-            <span>+381 61 123 321</span>
+            <a href="https://wa.me/923275541708" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">
+              +92 327 5541708
+            </a>
           </li>
           <li className="flex items-center gap-x-2 font-semibold">
             <FaRegEnvelope className="text-white text-xl" />
-            <span>test@email.com</span>
+            <span>arslan@arslanelectronics.com</span>
           </li>
         </ul>
         <ul className="flex items-center gap-x-5 h-full max-[370px]:text-sm max-[370px]:gap-x-2 font-semibold">
@@ -87,3 +80,4 @@ const HeaderTop = () => {
 };
 
 export default HeaderTop;
+

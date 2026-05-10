@@ -1,12 +1,3 @@
-// *********************
-// Role of the component: IntroducingSection with the text "Introducing Singitronic"
-// Name of the component: IntroducingSection.tsx
-// Developer: Aleksandar Kuzmanovic
-// Version: 1.0
-// Component call: <IntroducingSection />
-// Input parameters: no input parameters
-// Output: Section with the text "Introducing Singitronic" and button
-// *********************
 
 import Link from "next/link";
 import React from "react";
@@ -21,7 +12,7 @@ const IntroducingSection = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center flex flex-col gap-y-8 items-center max-w-4xl mx-auto">
           <h2 className="text-slate-900 text-7xl font-black tracking-tighter mb-2 max-md:text-5xl max-[480px]:text-3xl uppercase">
-            INTRODUCING <span className="text-primary-600">SINGI</span><span className="text-accent">TRONIC</span>
+            ARSLAN <span className="text-primary-600">ELECTRONICS</span>
           </h2>
           <div className="space-y-4">
             <p className="text-slate-600 text-2xl font-medium max-md:text-xl max-[480px]:text-lg leading-relaxed">

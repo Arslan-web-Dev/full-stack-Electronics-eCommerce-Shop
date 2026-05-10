@@ -1,15 +1,7 @@
-// *********************
-// Role of the component: Footer component
-// Name of the component: Footer.tsx
-// Developer: Aleksandar Kuzmanovic
-// Version: 1.0
-// Component call: <Footer />
-// Input parameters: no input parameters
-// Output: Footer component
-// *********************
 
 import { navigation } from "@/lib/utils";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 const Footer = () => {
@@ -24,13 +16,13 @@ const Footer = () => {
             <div className="flex flex-col gap-y-6">
               <Image
                 src="/logo v1 svg.svg"
-                alt="Singitronic logo"
+                alt="Arslan Electronics logo"
                 width={200}
                 height={200}
                 className="h-auto w-auto brightness-0 invert"
               />
               <p className="text-slate-400 max-w-xs leading-relaxed">
-                Your premier destination for the latest in smart electronics and technology. Innovating your lifestyle, one gadget at a time.
+                Your premier destination for the latest in smart electronics and technology in Pakistan. Innovating your lifestyle, one gadget at a time.
               </p>
               <div className="flex gap-x-4 mt-2">
                 {/* Social icons placeholder */}
@@ -82,6 +74,11 @@ const Footer = () => {
                         </a>
                       </li>
                     ))}
+                    <li>
+                      <Link href="/creator" className="text-sm leading-6 text-purple-400 hover:text-white transition-colors font-bold">
+                        Meet the Creator
+                      </Link>
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -125,7 +122,7 @@ const Footer = () => {
           </div>
           <div className="mt-16 border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs leading-5 text-slate-500">
-              &copy; {new Date().getFullYear()} Singitronic. All rights reserved.
+              &copy; {new Date().getFullYear()} Arslan Electronics. All rights reserved.
             </p>
             <div className="flex gap-x-6">
                <span className="text-xs text-slate-600">Privacy Policy</span>
@@ -139,3 +136,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

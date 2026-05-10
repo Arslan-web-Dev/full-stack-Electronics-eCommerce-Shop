@@ -1,12 +1,3 @@
-// *********************
-// Role of the component: Header component
-// Name of the component: Header.tsx
-// Developer: Aleksandar Kuzmanovic
-// Version: 1.0
-// Component call: <Header />
-// Input parameters: no input parameters
-// Output: Header component
-// *********************
 
 "use client";
 import { usePathname } from "next/navigation";
@@ -98,12 +89,17 @@ const Header = () => {
       {pathname.startsWith("/admin") === false && (
         <div className="glass-effect h-24 flex items-center justify-between px-16 max-md:px-6 max-lg:flex-col max-lg:gap-y-4 max-lg:justify-center max-lg:h-auto max-lg:py-4 max-w-screen-2xl mx-auto rounded-b-2xl mt-0 shadow-lg border-t-0">
           <Link href="/" className="hover:opacity-80 transition-opacity">
-            <img src="/logo v1 svg.svg" width={220} height={220} alt="singitronic logo" className="max-[1023px]:w-48" />
+            <img src="/logo v1 svg.svg" width={220} height={220} alt="Arslan Electronics logo" className="max-[1023px]:w-48" />
           </Link>
           <div className="flex-1 max-w-2xl mx-10 max-lg:mx-0 max-lg:w-full">
             <SearchInput />
           </div>
           <div className="flex gap-x-8 items-center">
+            <nav className="hidden lg:flex gap-x-6 mr-4 font-semibold text-slate-700">
+              <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+              <Link href="/shop" className="hover:text-blue-600 transition-colors">Shop</Link>
+              <Link href="/creator" className="hover:text-blue-600 transition-colors text-purple-600">Meet Creator</Link>
+            </nav>
             <NotificationBell />
             <HeartElement wishQuantity={wishQuantity} />
             <CartElement />
@@ -117,7 +113,7 @@ const Header = () => {
               src="/logo v1.png"
               width={130}
               height={130}
-              alt="singitronic logo"
+              alt="Arslan Electronics logo"
               className="w-56 h-auto"
             />
           </Link>
@@ -156,3 +152,4 @@ const Header = () => {
 };
 
 export default Header;
+

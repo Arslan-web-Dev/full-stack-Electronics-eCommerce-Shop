@@ -14,9 +14,7 @@ export async function GET(request: NextRequest) {
 
     // Admin mode: return all products without filters
     if (mode === "admin") {
-      const adminProducts = await prisma.product.findMany({
-        orderBy: { createdAt: 'desc' }
-      });
+      const adminProducts = await prisma.product.findMany({});
       return NextResponse.json(adminProducts);
     }
 

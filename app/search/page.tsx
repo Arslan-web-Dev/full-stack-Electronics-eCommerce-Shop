@@ -7,7 +7,6 @@ interface Props {
   searchParams: { search: string };
 }
 
-import prisma from "@/lib/prisma";
 
 const SearchPage = async ({ searchParams }: Props) => {
   const sp = await searchParams;

@@ -14,7 +14,7 @@ import Heading from "./Heading";
 import prisma from "@/lib/prisma";
 
 const ProductsSection = async () => {
-  let products = [];
+  let products: any[] = [];
   
   try {
     // Direct database call (Faster and avoids ECONNREFUSED during build)

@@ -4,7 +4,11 @@ export const apiClient = {
   baseUrl: config.apiBaseUrl,
   
   async request(endpoint: string, options: RequestInit = {}) {
-    const url = `${this.baseUrl}${endpoint}`;
+    // For Vercel, if we use Next.js API routes, we can use relative paths
+    // If baseUrl is http://localhost:3001, we want to override it for production
+    const isBrowser = typeof window !== 'undefined';
+    const finalBaseUrl = (isBrowser || !this.baseUrl) ? '' : this.baseUrl;
+    const url = `${finalBaseUrl}${endpoint}`;
     
     const defaultOptions: RequestInit = {
       headers: {

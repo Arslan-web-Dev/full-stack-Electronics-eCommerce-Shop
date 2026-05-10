@@ -14,13 +14,11 @@ const Footer = () => {
         <div className="mx-auto max-w-screen-2xl px-6 lg:px-8 pt-24 pb-14">
           <div className="xl:grid xl:grid-cols-3 xl:gap-12">
             <div className="flex flex-col gap-y-6">
-              <Image
-                src="/logo v1 svg.svg"
-                alt="Arslan Electronics logo"
-                width={200}
-                height={200}
-                className="h-auto w-auto brightness-0 invert"
-              />
+              <Link href="/" className="flex items-center gap-x-2">
+                <span className="text-3xl font-black tracking-tighter text-white">
+                  ARSLAN <span className="text-blue-500">ELECTRONICS</span>
+                </span>
+              </Link>
               <p className="text-slate-400 max-w-xs leading-relaxed">
                 Your premier destination for the latest in smart electronics and technology in Pakistan. Innovating your lifestyle, one gadget at a time.
               </p>

@@ -59,12 +59,12 @@ export const navigation = {
     { name: "Register Discounts", href: "#" },
   ],
   about: [
-    { name: "About PakTronics", href: "#" },
+    { name: "About Arslan Electronics", href: "#" },
     { name: "Work With Us", href: "#" },
     { name: "Company Profile", href: "#" },
   ],
   buy: [
-    { name: "PakTronics Loyalty Card", href: "#" },
+    { name: "Arslan Electronics Loyalty Card", href: "#" },
     { name: "Terms Of Use", href: "#" },
     { name: "Privacy Policy", href: "#" },
     { name: "Complaints", href: "#" },
@@ -72,7 +72,7 @@ export const navigation = {
   ],
   help: [
     { name: "Contact", href: "#" },
-    { name: "How to Buy at PakTronics", href: "#" },
+    { name: "How to Buy at Arslan Electronics", href: "#" },
     { name: "FAQ", href: "#" },
   ],
 };

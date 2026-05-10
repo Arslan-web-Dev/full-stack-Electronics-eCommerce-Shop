@@ -88,8 +88,10 @@ const Header = () => {
       <HeaderTop />
       {pathname.startsWith("/admin") === false && (
         <div className="glass-effect h-24 flex items-center justify-between px-16 max-md:px-6 max-lg:flex-col max-lg:gap-y-4 max-lg:justify-center max-lg:h-auto max-lg:py-4 max-w-screen-2xl mx-auto rounded-b-2xl mt-0 shadow-lg border-t-0">
-          <Link href="/" className="hover:opacity-80 transition-opacity">
-            <img src="/logo v1 svg.svg" width={220} height={220} alt="Arslan Electronics logo" className="max-[1023px]:w-48" />
+          <Link href="/" className="hover:opacity-80 transition-opacity flex items-center gap-x-2">
+            <span className="text-3xl font-black tracking-tighter text-slate-900">
+              ARSLAN <span className="text-blue-600">ELECTRONICS</span>
+            </span>
           </Link>
           <div className="flex-1 max-w-2xl mx-10 max-lg:mx-0 max-lg:w-full">
             <SearchInput />

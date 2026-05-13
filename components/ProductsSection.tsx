@@ -11,7 +11,7 @@ const ProductsSection = async () => {
     console.log("DATABASE_URL present:", !!process.env.DATABASE_URL);
     // Direct database call
     products = await prisma.product.findMany({
-      take: 12,
+      take: 100,
       include: {
         category: {
           select: { name: true }

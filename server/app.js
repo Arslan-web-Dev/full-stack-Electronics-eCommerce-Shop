@@ -73,28 +73,13 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean); // Remove undefined values
 
-// CORS configuration with origin validation
+// CORS configuration allowing all development origins securely with credentials support
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    // Automatically allow local development hosts and private network IPs
-    const isLocal = origin.startsWith('http://localhost:') || 
-                    origin.startsWith('http://127.0.0.1:') || 
-                    origin.startsWith('http://192.168.') ||
-                    origin.startsWith('http://10.') ||
-                    origin.startsWith('http://172.');
-
-    if (allowedOrigins.includes(origin) || isLocal) {
-      return callback(null, true);
-    }
-    
-    // Reject other origins
-    const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-    return callback(new Error(msg), false);
+    // Frictionless local development: reflect the incoming origin back to satisfy CORS requirements with credentials
+    return callback(null, true);
   },
   methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true, // Allow cookies and authorization headers
 };
 

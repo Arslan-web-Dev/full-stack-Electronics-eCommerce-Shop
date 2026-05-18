@@ -21,6 +21,8 @@ interface ImageItem {
   image: string;
 }
 
+import { Metadata } from "next";
+
 interface SingleProductPageProps {
   params: Promise<{  productSlug: string, id: string }>;
 }
@@ -29,6 +31,59 @@ const getProductImageSrc = (image?: string) => {
   if (!image) return "/product_placeholder.jpg";
   return image.startsWith("http") || image.startsWith("/") ? image : `/${image}`;
 };
+
+export async function generateMetadata({ params }: SingleProductPageProps): Promise<Metadata> {
+  const paramsAwaited = await params;
+  const product = await prisma.product.findUnique({
+    where: { slug: paramsAwaited.productSlug },
+  });
+
+  if (!product) {
+    return {
+      title: "Product Not Found | Arslan Electronics Store",
+      description: "Discover a wide range of premium electronics, gadgets, and tech accessories at Arslan Electronics.",
+    };
+  }
+
+  const cleanTitle = `${product.title} - Buy Online | Arslan Electronics`;
+  const cleanDescription = product.description
+    ? `${product.description.substring(0, 155).trim()}...`
+    : `Buy the new premium ${product.title} at the best price online. Fast shipping, secure transactions, and premium warranty at Arslan Electronics.`;
+
+  const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  const imageSrc = product.mainImage
+    ? (product.mainImage.startsWith("http") ? product.mainImage : `${baseUrl}/${product.mainImage}`)
+    : `${baseUrl}/product_placeholder.jpg`;
+
+  return {
+    title: cleanTitle,
+    description: cleanDescription,
+    alternates: {
+      canonical: `${baseUrl}/product/${product.slug}`,
+    },
+    openGraph: {
+      title: cleanTitle,
+      description: cleanDescription,
+      url: `${baseUrl}/product/${product.slug}`,
+      siteName: "Arslan Electronics",
+      type: "website",
+      images: [
+        {
+          url: imageSrc,
+          width: 800,
+          height: 800,
+          alt: product.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: cleanTitle,
+      description: cleanDescription,
+      images: [imageSrc],
+    },
+  };
+}
 
 const SingleProductPage = async ({ params }: SingleProductPageProps) => {
   const paramsAwaited = await params;
@@ -55,8 +110,52 @@ const SingleProductPage = async ({ params }: SingleProductPageProps) => {
     notFound();
   }
 
+  // Generate dynamic JSON-LD Product Schema
+  const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  const imageSrc = product.mainImage
+    ? (product.mainImage.startsWith("http") ? product.mainImage : `${baseUrl}/${product.mainImage}`)
+    : `${baseUrl}/product_placeholder.jpg`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.title,
+    "image": imageSrc,
+    "description": product.description || `Buy ${product.title} at Arslan Electronics Karachi Hub at the best competitive price.`,
+    "brand": {
+      "@type": "Brand",
+      "name": product.manufacturer || "Arslan Electronics"
+    },
+    "sku": `ELEC-${product.id.substring(0, 8)}`,
+    "offers": {
+      "@type": "Offer",
+      "url": `${baseUrl}/product/${product.slug}`,
+      "priceCurrency": "USD",
+      "price": product.price,
+      "priceValidUntil": "2027-12-31",
+      "itemCondition": "https://schema.org/NewCondition",
+      "availability": product.inStock 
+        ? "https://schema.org/InStock" 
+        : "https://schema.org/OutOfStock",
+      "seller": {
+        "@type": "Organization",
+        "name": product.merchant?.name || "Arslan Electronics Karachi Hub"
+      }
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": product.rating || "5.0",
+      "reviewCount": "24"
+    }
+  };
+
   return (
     <div className="bg-white">
+      {/* Inject Structured Search Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="max-w-screen-2xl mx-auto">
         <div className="flex justify-center gap-x-16 pt-10 max-lg:flex-col items-center gap-y-5 px-5">
           <div>

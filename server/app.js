@@ -67,6 +67,8 @@ app.use(errorLogger);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
   process.env.NEXTAUTH_URL,
   process.env.FRONTEND_URL,
 ].filter(Boolean); // Remove undefined values
@@ -74,16 +76,16 @@ const allowedOrigins = [
 // CORS configuration with origin validation
 const corsOptions = {
   origin: function (origin, callback) {
-
     if (!origin) return callback(null, true);
     
+    // Automatically allow local development hosts and private network IPs
+    const isLocal = origin.startsWith('http://localhost:') || 
+                    origin.startsWith('http://127.0.0.1:') || 
+                    origin.startsWith('http://192.168.') ||
+                    origin.startsWith('http://10.') ||
+                    origin.startsWith('http://172.');
 
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-
-    if (process.env.NODE_ENV === 'development' && origin.startsWith('http://localhost:')) {
+    if (allowedOrigins.includes(origin) || isLocal) {
       return callback(null, true);
     }
     

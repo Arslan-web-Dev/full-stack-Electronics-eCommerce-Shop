@@ -110,6 +110,18 @@ npm install
 npm run start
 ```
 
+## 🔐 Portal Test Credentials
+
+Use these pre-configured, pre-verified accounts to test role-based access:
+
+### 👑 1. Admin Account (Full inventory CRUD, Coupon management, and review moderating)
+*   **Email**: `admin@arslanelectronics.com`
+*   **Password**: `AdminPassword123`
+
+### 👤 2. Standard Buyer Account (Checkout, Dashboards, and Invoice Printing)
+*   **Email**: `user@arslanelectronics.com`
+*   **Password**: `UserPassword123`
+
 ---
 
 ## 👨‍💻 Developed By

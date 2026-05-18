@@ -1,23 +1,37 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { updateSession } from "@/utils/supabase/middleware";
 
-export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user } = await updateSession(request);
+export function middleware(request: NextRequest) {
+  const accessToken = request.cookies.get("accessToken")?.value;
 
   // Protect admin routes
   if (request.nextUrl.pathname.startsWith("/admin")) {
-    if (!user) {
+    if (!accessToken) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // Check admin role from user_metadata (fast path)
-    const role = user.user_metadata?.role;
-    if (role !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url));
+    try {
+      // Decode JWT token payload safely in Next.js Edge Runtime
+      const payloadPart = accessToken.split(".")[1];
+      if (!payloadPart) {
+        return NextResponse.redirect(new URL("/login", request.url));
+      }
+      
+      // Base64URL decoding
+      const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+      const decodedPayload = JSON.parse(
+        Buffer.from(base64, "base64").toString("utf-8")
+      );
+
+      if (decodedPayload.role !== "admin") {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    } catch (e) {
+      console.error("JWT decoding failed in middleware:", e);
+      return NextResponse.redirect(new URL("/login", request.url));
     }
   }
 
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {

@@ -52,6 +52,7 @@ const signup = asyncHandler(async (req, res) => {
       role: role || "user",
       isVerified: false,
       verificationToken,
+      supabaseId: "local-" + crypto.randomUUID(),
     },
   });
 

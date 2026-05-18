@@ -49,6 +49,8 @@ async function createAdminUser() {
         email: email,
         password: hashedPassword,
         role: "admin",
+        isVerified: true,
+        supabaseId: "local-" + crypto.randomUUID(),
       },
     });
 

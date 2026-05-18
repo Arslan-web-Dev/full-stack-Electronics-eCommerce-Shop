@@ -1,139 +1,126 @@
-# 🛒 Arslan Electronics - Full-Stack eCommerce Solution
+# 🛒 Arslan Electronics - Premium 3D Full-Stack eCommerce Solution
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](https://full-stack-electronics-e-commerce-s.vercel.app/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-blue)](https://www.prisma.io/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)](https://www.mongodb.com/atlas)
+[![Three.js](https://img.shields.io/badge/Three.js-WebGL-orange)](https://threejs.org/)
 
-**Arslan Electronics** is a premium, high-performance electronics e-commerce platform designed for the Pakistani market. Built with a modern tech stack, it offers a seamless shopping experience, robust admin controls, and cloud-native architecture.
-
----
-
-## 🚀 Live URL
-Check out the production build here:  
-**[https://full-stack-electronics-e-commerce-s.vercel.app/](https://full-stack-electronics-e-commerce-s.vercel.app/)**
+**Arslan Electronics** is an immersive, premium, high-performance electronics e-commerce platform. Leveraging hardware-accelerated **Three.js WebGL particles**, live ticking sci-fi HUD telemetry, a multi-step checkout wizard with integrated secure **Stripe payment elements**, a highly visual custom Admin dashboard with revenue analytics, and role-based MERN JWT authentication, it delivers an Apple/Tesla-style high-end user experience.
 
 ---
 
-## 🏗️ Modern Serverless Architecture
-
-```mermaid
-flowchart LR
-  User["Customer Browser"] --> Next["Next.js App Router (Frontend)"]
-  Admin["Admin Browser"] --> Next
-
-  Next --> Supabase["Supabase Auth"]
-  Next --> APIRoutes["Next.js Serverless API Routes"]
-  
-  APIRoutes --> Prisma["Prisma ORM"]
-  Prisma --> Atlas["MongoDB Atlas (Cloud)"]
-
-  Next --> Zustand["Zustand State Management"]
-```
+## 🚀 Live Portal URL
+Experience the live optimized production application here:  
+👉 **[https://full-stack-electronics-e-commerce-s.vercel.app/](https://full-stack-electronics-e-commerce-s.vercel.app/)**
 
 ---
 
-## 📋 Core Functionalities
+## 🏗️ Architectural Flow
 
-### 🛍️ Customer Experience
-- **Smart Catalog**: Real-time product browsing with category-wise segregation.
-- **Dynamic Filtering**: Instantly filter by Price, Rating, and Stock availability.
-- **Search Engine**: Robust search functionality with mode-insensitive matching.
-- **User Dashboard**: Personalized wishlist, order history, and notification center.
-- **Checkout Engine**: Secure multi-step checkout process with email validation.
-
-### 🛡️ Admin Powerhouse
-- **Real-time Monitoring**: Track sales and order statuses from a protected dashboard.
-- **Inventory Management**: Full CRUD for Products, Categories, and Merchants.
-- **Bulk Import Service**: Batch process thousands of products via CSV automation.
-- **User Control**: Manage user roles and permissions directly from the portal.
-
----
-
-## 🔄 Application Flows
-
-### Shopping Journey
 ```mermaid
 flowchart TD
-  Visit["Visitor opens site"] --> Browse["Browse Shop & Categories"]
-  Browse --> Search["Search for Products"]
-  Search --> Product["Product Detail Page"]
-  Product --> Cart["Add to Cart / Buy Now"]
-  Cart --> AuthCheck{"Signed in?"}
-  AuthCheck -- No --> Login["Supabase Auth"]
-  Login --> Checkout["Secure Checkout"]
-  AuthCheck -- Yes --> Checkout
-  Checkout --> CreateOrder["Create Cloud Order"]
-  CreateOrder --> Notify["Notification Sent"]
-```
+  User["Customer Browser"] --> NextApp["Next.js App Router Frontend"]
+  Admin["Admin Browser"] --> NextApp
 
-### Admin Management
-```mermaid
-flowchart TD
-  AdminLogin["Admin Authenticates"] --> RoleCheck{"Is Role Admin?"}
-  RoleCheck -- No --> Redirect["Redirect to Home"]
-  RoleCheck -- Yes --> Dashboard["Admin Panel"]
-  
-  Dashboard --> Manage["Manage Inventory"]
-  Manage --> Products["Products CRUD"]
-  Manage --> Categories["Categories CRUD"]
-  Manage --> Bulk["CSV Bulk Upload"]
-  
-  Products --> CloudDB["MongoDB Atlas"]
-  Bulk --> BatchProcess["Serverless Batch Job"]
+  NextApp --> Zustand["Zustand Auth Store (Persisted tokens)"]
+  NextApp --> Express["Express.js API Backend (MERN)"]
+
+  Express --> AuthMid["Custom jwtAuth Middleware"]
+  AuthMid --> Prisma["Prisma ORM Client"]
+  Prisma --> Atlas["MongoDB Atlas (Cloud Data Store)"]
+
+  NextApp --> StripeSDK["Stripe Elements Integration"]
 ```
 
 ---
 
-## 📊 Data Model (Cloud Schema)
+## 🌌 Core Features & Innovations
 
-```mermaid
-erDiagram
-  User ||--o{ Wishlist : manages
-  User ||--o{ Notification : receives
-  Category ||--o{ Product : classifies
-  Merchant ||--o{ Product : supplies
-  Product ||--o{ OrderItem : included_in
-  Order ||--o{ OrderItem : contains
+### 🛰️ Apple/Tesla-style Immersive Experience
+*   **WebGL Particle System**: Built a hardware-accelerated [Three.js](https://threejs.org/) particle constellation sphere with interactive gravity fields responsive to cursor coordinates.
+*   **Holographic HUD**: Ticking digital sensor grids displaying real-time telemetry (CPU frequencies, latency metrics, and network loads).
+*   **Active Laser Scanning**: Seamless glassmorphic panels animated with moving glowing neon green laser scanner lines.
 
-  Product {
-    string id
-    string slug
-    string title
-    float price
-    int inStock
-  }
-  Order {
-    string id
-    string status
-    float total
-    datetime dateTime
-  }
-```
+### 🛡️ Custom MERN JWT Authentication
+*   **Secure Session Validation**: Replaced Supabase with unified role-based Access and Refresh tokens stored securely in a local persistent Zustand store.
+*   **Secure Router Protection**: Full client and server-side middleware checking authentication status on checked out forms and dashboard.
+
+### 💳 professional Payment wizard
+*   **Stripe Elements Integration**: SECURE card elements wrapping checkout reviews to process tokens securely.
+*   **Transaction Syncing**: Captures full order objects and syncs payment statuses instantly to MongoDB.
+*   **Promotional Coupons**: Live input fields allowing customers to validate and apply discounts before paying.
+
+### 🎛️ Sleek Buyer Panel Dashboard
+*   **Interactive Orders Timeline**: Displays active orders with real-time progress indicators: `Pending` ➔ `Processing` ➔ `Shipped` ➔ `Delivered`.
+*   **Integrated Wishlist Module**: Direct add-to-cart or delete actions rendering on a unified page.
+*   **Corporate Invoice Creator**: Renders highly professional printable invoice layouts right in the order history log.
+
+### 📊 Visual Admin Command Center
+*   **Vibrant SVG Analytics**: Gorgeous monthly revenue growth graphics and product category distribution indicators.
+*   **Promo Coupon Manager**: Admins can generate randomized promo codes, select discount levels up to 50%, and review existing promo campaigns.
+*   **Review Moderation Portal**: Moderate incoming product ratings, check feedback descriptions, and approve or delete comments instantly.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Technology Stack
 
-- **Frontend**: Next.js 15 (App Router), React 18, TypeScript
-- **Styling**: Tailwind CSS, DaisyUI (Premium Themes)
-- **Database**: MongoDB Atlas (Cloud)
-- **ORM**: Prisma
-- **Auth**: Supabase (JWT & Session based)
-- **State Management**: Zustand
+*   **Frontend Engine**: Next.js 16 (App Router), React 18, TypeScript, Three.js (WebGL)
+*   **Backend Server**: Node.js, Express.js (Role Authorization Middleware)
+*   **Database & ORM**: MongoDB Atlas, Prisma Client
+*   **Styling & Themes**: Tailwind CSS, DaisyUI (Custom Class Light/Dark Mode)
+*   **State Containers**: Zustand (Synchronized local storage)
+
+---
+
+## ⚙️ Quick Installation
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/Arslan-web-Dev/full-stack-Electronics-eCommerce-Shop.git
+cd full-stack-Electronics-eCommerce-Shop
+```
+
+### 2. Configure Environment `.env`
+Create a `.env` file in the root directory:
+```env
+DATABASE_URL="mongodb+srv://<user>:<password>@cluster0.mongodb.net/arslan-shop"
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
+STRIPE_SECRET_KEY="sk_test_..."
+JWT_SECRET="your_hyper_secure_secret"
+```
+
+### 3. Install Dependencies & Seed Database
+```bash
+# Install frontend packages
+npm install
+
+# Seed Prisma client
+npx prisma generate
+npx prisma db push
+
+# Start development frontend
+npm run dev
+```
+
+### 4. Launch Backend API Server
+```bash
+cd server
+npm install
+npm run start
+```
 
 ---
 
 ## 👨‍💻 Developed By
-
 **Muhammad Arslan**  
-*Lead Full-Stack Developer*
+*Lead Full-Stack Visual Software Engineer*  
 
-Specializing in building high-performance, scalable web applications for businesses.  
-**Contact:** [WhatsApp Support](https://wa.me/923275541708) | [Creator Profile](https://full-stack-electronics-e-commerce-s.vercel.app/creator)
+Specializing in high-performance web applications, serverless computing, and WebGL immersive creations.  
+*   **Contact Support**: [WhatsApp Support](https://wa.me/923275541708)
+*   **Creator Profile**: [/creator](https://full-stack-electronics-e-commerce-s.vercel.app/creator)
 
 ---
 
 ## 📜 License
-
 This project is licensed under the MIT License.

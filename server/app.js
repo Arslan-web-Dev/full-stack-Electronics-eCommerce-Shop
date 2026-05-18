@@ -18,6 +18,9 @@ const wishlistRouter = require('./routes/wishlist');
 const notificationsRouter = require('./routes/notifications');
 const merchantRouter = require('./routes/merchant'); // Add this line
 const bulkUploadRouter = require('./routes/bulkUpload');
+const authRouter = require('./routes/auth');
+const paymentRouter = require('./routes/payment');
+const reviewsRouter = require('./routes/reviews');
 var cors = require("cors");
 
 // Import logging middleware
@@ -117,13 +120,21 @@ app.use("/api/users/email", authLimiter); // For login attempts via email lookup
 
 // Apply admin rate limiting to admin routes
 
-// Supabase JWT verification middleware
-const { verifySupabaseToken } = require('./middleware/supabaseAuth');
-app.use('/api/orders', verifySupabaseToken);
-app.use('/api/order-product', verifySupabaseToken);
-app.use('/api/notifications', verifySupabaseToken);
-app.use('/api/wishlist', verifySupabaseToken);
+// JWT verification middleware
+const { verifyJWTToken, requireAuth } = require('./middleware/jwtAuth');
 
+// Apply JWT parsing globally
+app.use(verifyJWTToken);
+
+// Apply auth protection to secure endpoints
+app.use('/api/orders', requireAuth);
+app.use('/api/order-product', requireAuth);
+app.use('/api/notifications', requireAuth);
+app.use('/api/wishlist', requireAuth);
+
+app.use("/api/auth", authRouter);
+app.use("/api/payments", paymentRouter);
+app.use("/api/reviews", reviewsRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/images", productImagesRouter);

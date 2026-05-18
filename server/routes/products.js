@@ -8,10 +8,12 @@ const {
   deleteProduct,
   searchProducts,
   getProductById,
+  getProductRecommendations,
 } = require("../controllers/products");
 
 router.route("/").get(getAllProducts).post(createProduct);
 
+router.route("/recommendations").get(getProductRecommendations);
 
 router
   .route("/:id")

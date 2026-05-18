@@ -1,29 +1,35 @@
 "use client";
+
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import toast from "react-hot-toast";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { SectionTitle } from "@/components";
 import { useProductStore } from "../_zustand/store";
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
+import { useAuthStore } from "../_zustand/authStore";
 import apiClient from "@/lib/api";
 
-const supabase = createClient();
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_test_51PTestKey1234567890Publishable"
+);
 
-const CheckoutPage = () => {
-  const [session, setSession] = useState<any>(null);
+const CheckoutFormInner = () => {
+  const router = useRouter();
+  const stripe = useStripe();
+  const elements = useElements();
+  
+  const { products, total, clearCart } = useProductStore();
+  const { user, isAuthenticated } = useAuthStore();
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-      }
-    );
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  const [step, setStep] = useState(1); // 1: Shipping, 2: Payment Method, 3: Review & Pay
+  const [paymentMethod, setPaymentMethod] = useState<"stripe" | "cod">("stripe");
+  const [couponCode, setCouponCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [checkoutForm, setCheckoutForm] = useState({
     name: "",
     lastname: "",
@@ -37,740 +43,586 @@ const CheckoutPage = () => {
     postalCode: "",
     orderNotice: "",
   });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { products, total, clearCart } = useProductStore();
-  const router = useRouter();
 
-  // Add validation functions that match server requirements
-  const validateForm = () => {
-    const errors: string[] = [];
-    
-    // Name validation
-    if (!checkoutForm.name.trim() || checkoutForm.name.trim().length < 2) {
-      errors.push("Name must be at least 2 characters");
+  // Pre-fill user email if authenticated
+  useEffect(() => {
+    if (isAuthenticated && user?.email) {
+      setCheckoutForm((prev) => ({ ...prev, email: user.email }));
     }
-    
-    // Lastname validation
-    if (!checkoutForm.lastname.trim() || checkoutForm.lastname.trim().length < 2) {
-      errors.push("Lastname must be at least 2 characters");
-    }
-    
-    // Email validation
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    if (!checkoutForm.email.trim() || !emailRegex.test(checkoutForm.email.trim())) {
-      errors.push("Please enter a valid email address");
-    }
-    
-    // Phone validation (must be at least 10 digits)
-    const phoneDigits = checkoutForm.phone.replace(/[^0-9]/g, '');
-    if (!checkoutForm.phone.trim() || phoneDigits.length < 10) {
-      errors.push("Phone number must be at least 10 digits");
-    }
-    
-    // Company validation
-    if (!checkoutForm.company.trim() || checkoutForm.company.trim().length < 5) {
-      errors.push("Company must be at least 5 characters");
-    }
-    
-    // Address validation
-    if (!checkoutForm.adress.trim() || checkoutForm.adress.trim().length < 5) {
-      errors.push("Address must be at least 5 characters");
-    }
-    
-    // Apartment validation (updated to 1 character minimum)
-    if (!checkoutForm.apartment.trim() || checkoutForm.apartment.trim().length < 1) {
-      errors.push("Apartment is required");
-    }
-    
-    // City validation
-    if (!checkoutForm.city.trim() || checkoutForm.city.trim().length < 5) {
-      errors.push("City must be at least 5 characters");
-    }
-    
-    // Country validation
-    if (!checkoutForm.country.trim() || checkoutForm.country.trim().length < 5) {
-      errors.push("Country must be at least 5 characters");
-    }
-    
-    // Postal code validation
-    if (!checkoutForm.postalCode.trim() || checkoutForm.postalCode.trim().length < 3) {
-      errors.push("Postal code must be at least 3 characters");
-    }
-    
-    return errors;
+  }, [isAuthenticated, user?.email]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setCheckoutForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const makePurchase = async () => {
-    // Client-side validation first
-    const validationErrors = validateForm();
-    if (validationErrors.length > 0) {
-      validationErrors.forEach(error => {
-        toast.error(error);
-      });
-      return;
+  const validateShipping = () => {
+    const required = ["name", "lastname", "phone", "email", "adress", "city", "country", "postalCode"];
+    for (const field of required) {
+      if (!checkoutForm[field as keyof typeof checkoutForm]?.trim()) {
+        toast.error(`Please fill in the required field: ${field}`);
+        return false;
+      }
     }
-
-    // Basic client-side checks for required fields (UX only)
-    const requiredFields = [
-      'name', 'lastname', 'phone', 'email', 'company', 
-      'adress', 'apartment', 'city', 'country', 'postalCode'
-    ];
-    
-    const missingFields = requiredFields.filter(field => 
-      !checkoutForm[field as keyof typeof checkoutForm]?.trim()
-    );
-
-    if (missingFields.length > 0) {
-      toast.error("Please fill in all required fields");
-      return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(checkoutForm.email)) {
+      toast.error("Please enter a valid email address");
+      return false;
     }
+    return true;
+  };
 
+  const handleCouponApply = () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) return;
+
+    if (code === "ARSLAN20" || code === "WELCOME20") {
+      setDiscountPercent(20);
+      setAppliedCoupon(code);
+      toast.success("Promo code applied: 20% discount!");
+    } else if (code === "DISCOUNT10") {
+      setDiscountPercent(10);
+      setAppliedCoupon(code);
+      toast.success("Promo code applied: 10% discount!");
+    } else {
+      toast.error("Invalid coupon code");
+    }
+  };
+
+  const discountedTotal = total - (total * discountPercent) / 100;
+
+  const handleSubmitOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (products.length === 0) {
       toast.error("Your cart is empty");
-      return;
-    }
-
-    if (total <= 0) {
-      toast.error("Invalid order total");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      console.log("🚀 Starting order creation...");
-      
-      // Get user ID if logged in
-      let userId = null;
-      if (session?.user?.email) {
-        try {
-          console.log("🔍 Getting user ID for logged-in user:", session.user.email);
-          const userResponse = await apiClient.get(`/api/users/email/${session.user.email}`);
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            userId = userData.id;
-            console.log("✅ Found user ID:", userId);
-          } else {
-            console.log("❌ Could not find user with email:", session.user.email);
-          }
-        } catch (userError) {
-          console.log("⚠️  Error getting user ID:", userError);
-        }
-      }
-      
-      // Prepare the order data
+      console.log("📦 Creating customer order...");
+
+      // 1. Save Customer_order in Database
       const orderData = {
         name: checkoutForm.name.trim(),
         lastname: checkoutForm.lastname.trim(),
         phone: checkoutForm.phone.trim(),
         email: checkoutForm.email.trim().toLowerCase(),
-        company: checkoutForm.company.trim(),
+        company: checkoutForm.company.trim() || "N/A",
         adress: checkoutForm.adress.trim(),
-        apartment: checkoutForm.apartment.trim(),
+        apartment: checkoutForm.apartment.trim() || "N/A",
         postalCode: checkoutForm.postalCode.trim(),
         status: "pending",
-        total: total,
+        total: Math.round(discountedTotal),
         city: checkoutForm.city.trim(),
         country: checkoutForm.country.trim(),
-        orderNotice: checkoutForm.orderNotice.trim(),
-        userId: userId // Add user ID for notifications
+        orderNotice: checkoutForm.orderNotice.trim() || "None",
+        userId: user?.id || null,
       };
 
-      console.log("📋 Order data being sent:", orderData);
-
-      // Send order data to server for validation and processing
-      const response = await apiClient.post("/api/orders", orderData);
-
-      console.log("📡 API Response received:");
-      console.log("  Status:", response.status);
-      console.log("  Status Text:", response.statusText);
-      console.log("  Response OK:", response.ok);
-      
-      // Check if response is ok before parsing
-      if (!response.ok) {
-        console.error("❌ Response not OK:", response.status, response.statusText);
-        const errorText = await response.text();
-        console.error("Error response body:", errorText);
-        
-        // Try to parse as JSON to get detailed error info
-        try {
-          const errorData = JSON.parse(errorText);
-          console.error("Parsed error data:", errorData);
-          
-          // Handle different error types
-          if (response.status === 409) {
-            // Duplicate order error
-            toast.error(errorData.details || errorData.error || "Duplicate order detected");
-            return; // Don't throw, just return to stop execution
-          } else if (errorData.details && Array.isArray(errorData.details)) {
-            // Validation errors
-            errorData.details.forEach((detail: any) => {
-              toast.error(`${detail.field}: ${detail.message}`);
-            });
-          } else if (typeof errorData.details === 'string') {
-            // Single error message in details
-            toast.error(errorData.details);
-          } else {
-            // Fallback error message
-            toast.error(errorData.error || "Order creation failed");
-          }
-        } catch (parseError) {
-          console.error("Could not parse error as JSON:", parseError);
-          toast.error("Order creation failed. Please try again.");
-        }
-        
-        return; // Stop execution instead of throwing
+      const orderResponse = await apiClient.post("/api/orders", orderData);
+      if (!orderResponse.ok) {
+        throw new Error("Order creation failed on server");
       }
 
-      const data = await response.json();
-      console.log("✅ Parsed response data:", data);
-      
-      const orderId: string = data.id;
-      console.log("🆔 Extracted order ID:", orderId);
+      const orderResult = await orderResponse.json();
+      const orderId = orderResult.id;
 
-      if (!orderId) {
-        console.error("❌ Order ID is missing or falsy!");
-        console.error("Full response data:", JSON.stringify(data, null, 2));
-        throw new Error("Order ID not received from server");
-      }
-
-      console.log("✅ Order ID validation passed, proceeding with product addition...");
-
-      // Add products to order
-      for (let i = 0; i < products.length; i++) {
-        console.log(`🛍️ Adding product ${i + 1}/${products.length}:`, {
+      // 2. Add products to customer_order_product relation table
+      for (const item of products) {
+        await apiClient.post("/api/order-product", {
           orderId,
-          productId: products[i].id,
-          quantity: products[i].amount
+          productId: item.id,
+          quantity: item.amount,
         });
-        
-        await addOrderProduct(orderId, products[i].id, products[i].amount);
-        console.log(`✅ Product ${i + 1} added successfully`);
       }
 
-      console.log(" All products added successfully!");
+      // 3. Handle Payment Flow
+      if (paymentMethod === "cod") {
+        // Record COD Payment
+        const recordResponse = await apiClient.post("/api/payments/record", {
+          orderId,
+          amount: Math.round(discountedTotal),
+          method: "cod",
+          status: "pending",
+        });
 
-      // Clear form and cart
-      setCheckoutForm({
-        name: "",
-        lastname: "",
-        phone: "",
-        email: "",
-        company: "",
-        adress: "",
-        apartment: "",
-        city: "",
-        country: "",
-        postalCode: "",
-        orderNotice: "",
-      });
-      clearCart();
-      
-      // Refresh notification count if user is logged in
-      try {
-        // This will trigger a refresh of notifications in the background
-        window.dispatchEvent(new CustomEvent('orderCompleted'));
-      } catch (error) {
-        console.log('Note: Could not trigger notification refresh');
-      }
-      
-      toast.success("Order created successfully! You will be contacted for payment.");
-      setTimeout(() => {
-        router.push("/");
-      }, 1000);
-    } catch (error: any) {
-      console.error("💥 Error in makePurchase:", error);
-      
-      // Handle server validation errors
-      if (error.response?.status === 400) {
-        console.log(" Handling 400 error...");
-        try {
-          const errorData = await error.response.json();
-          console.log("Error data:", errorData);
-          if (errorData.details && Array.isArray(errorData.details)) {
-            // Show specific validation errors
-            errorData.details.forEach((detail: any) => {
-              toast.error(`${detail.field}: ${detail.message}`);
-            });
-          } else {
-            toast.error(errorData.error || "Validation failed");
-          }
-        } catch (parseError) {
-          console.error("Failed to parse error response:", parseError);
-          toast.error("Validation failed");
+        if (recordResponse.ok) {
+          toast.success("Order placed successfully via Cash on Delivery!");
+          clearCart();
+          router.push(`/buyer-dashboard`);
+        } else {
+          toast.error("Failed to record local payment log.");
         }
-      } else if (error.response?.status === 409) {
-        toast.error("Duplicate order detected. Please wait before creating another order.");
       } else {
-        console.log("🔍 Handling generic error...");
-        toast.error("Failed to create order. Please try again.");
+        // Stripe Online Payment Flow
+        if (!stripe || !elements) {
+          toast.error("Stripe is not fully loaded. Please retry.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+          toast.error("Card Element not loaded.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Create Payment Intent
+        const intentResponse = await apiClient.post("/api/payments/create-intent", {
+          orderId,
+          amount: Math.round(discountedTotal),
+        });
+
+        if (!intentResponse.ok) {
+          const errData = await intentResponse.json();
+          throw new Error(errData.error || "Failed to create Stripe payment intent");
+        }
+
+        const { clientSecret, stripePaymentId } = await intentResponse.json();
+
+        // Confirm Card Payment
+        const stripeResult = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: `${checkoutForm.name} ${checkoutForm.lastname}`,
+              email: checkoutForm.email,
+              phone: checkoutForm.phone,
+            },
+          },
+        });
+
+        if (stripeResult.error) {
+          // Record payment failure
+          await apiClient.post("/api/payments/record", {
+            orderId,
+            stripePaymentId,
+            amount: Math.round(discountedTotal),
+            method: "stripe",
+            status: "failed",
+          });
+          throw new Error(stripeResult.error.message || "Stripe card validation failed");
+        }
+
+        if (stripeResult.paymentIntent?.status === "succeeded") {
+          // Record payment completion
+          await apiClient.post("/api/payments/record", {
+            orderId,
+            stripePaymentId,
+            amount: Math.round(discountedTotal),
+            method: "stripe",
+            status: "completed",
+          });
+
+          toast.success("Secure credit card payment successful!");
+          clearCart();
+          router.push(`/buyer-dashboard`);
+        }
       }
+    } catch (error: any) {
+      console.error("Checkout submission failed:", error);
+      toast.error(error.message || "An unexpected error occurred during checkout.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const addOrderProduct = async (
-    orderId: string,
-    productId: string,
-    productQuantity: number
-  ) => {
-    try {
-      console.log("️ Adding product to order:", {
-        customerOrderId: orderId,
-        productId,
-        quantity: productQuantity
-      });
-      
-      const response = await apiClient.post("/api/order-product", {
-        customerOrderId: orderId,
-        productId: productId,
-        quantity: productQuantity,
-      });
-
-      console.log("📡 Product order response:", response);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Product order failed:", response.status, errorText);
-        throw new Error(`Product order failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("✅ Product order successful:", data);
-      
-    } catch (error) {
-      console.error("💥 Error creating product order:", error);
-      throw error;
-    }
-  };
-
-  useEffect(() => {
-    if (products.length === 0) {
-      toast.error("You don't have items in your cart");
-      router.push("/cart");
-    }
-  }, []);
-
   return (
-    <div className="bg-white">
-      <SectionTitle title="Checkout" path="Home | Cart | Checkout" />
-      
-      <div className="hidden h-full w-1/2 bg-white lg:block" aria-hidden="true" />
-      <div className="hidden h-full w-1/2 bg-gray-50 lg:block" aria-hidden="true" />
-
-      <main className="relative mx-auto grid max-w-screen-2xl grid-cols-1 gap-x-16 lg:grid-cols-2 lg:px-8 xl:gap-x-48">
-        <h1 className="sr-only">Order information</h1>
-
-        {/* Order Summary */}
-        <section
-          aria-labelledby="summary-heading"
-          className="bg-gray-50 px-4 pb-10 pt-16 sm:px-6 lg:col-start-2 lg:row-start-1 lg:bg-transparent lg:px-0 lg:pb-16"
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Checkout Steps Header */}
+      <div className="flex justify-center items-center space-x-4 mb-10 max-sm:space-x-2">
+        <button
+          onClick={() => step > 1 && setStep(1)}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-full font-semibold transition-all ${
+            step === 1 ? "bg-indigo-600 text-white shadow-lg" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
         >
-          <div className="mx-auto max-w-lg lg:max-w-none">
-            <h2 id="summary-heading" className="text-lg font-medium text-gray-900">
-              Order summary
-            </h2>
+          <span className="w-6 h-6 rounded-full bg-white text-indigo-600 flex items-center justify-center text-xs font-bold">1</span>
+          <span>Shipping</span>
+        </button>
+        <div className="w-12 h-0.5 bg-gray-200" />
+        <button
+          onClick={() => step > 2 && setStep(2)}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-full font-semibold transition-all ${
+            step === 2 ? "bg-indigo-600 text-white shadow-lg" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+          disabled={step < 2}
+        >
+          <span className="w-6 h-6 rounded-full bg-white text-indigo-600 flex items-center justify-center text-xs font-bold">2</span>
+          <span>Payment Method</span>
+        </button>
+        <div className="w-12 h-0.5 bg-gray-200" />
+        <button
+          className={`flex items-center space-x-2 px-4 py-2 rounded-full font-semibold transition-all ${
+            step === 3 ? "bg-indigo-600 text-white shadow-lg" : "bg-gray-100 text-gray-600"
+          }`}
+          disabled={step < 3}
+        >
+          <span className="w-6 h-6 rounded-full bg-white text-indigo-600 flex items-center justify-center text-xs font-bold">3</span>
+          <span>Review & Pay</span>
+        </button>
+      </div>
 
-            <ul
-              role="list"
-              className="divide-y divide-gray-200 text-sm font-medium text-gray-900"
-            >
-              {products.map((product) => (
-                <li key={product?.id} className="flex items-start space-x-4 py-6">
-                  <Image
-                    src={product?.image ? `/${product?.image}` : "/product_placeholder.jpg"}
-                    alt={product?.title}
-                    width={80}
-                    height={80}
-                    className="h-20 w-20 flex-none rounded-md object-cover object-center"
-                  />
-                  <div className="flex-auto space-y-1">
-                    <h3>{product?.title}</h3>
-                    <p className="text-gray-500">x{product?.amount}</p>
-                  </div>
-                  <p className="flex-none text-base font-medium">
-                    ${product?.price}
-                  </p>
-                </li>
-              ))}
-            </ul>
-
-            <dl className="hidden space-y-6 border-t border-gray-200 pt-6 text-sm font-medium text-gray-900 lg:block">
-              <div className="flex items-center justify-between">
-                <dt className="text-gray-600">Subtotal</dt>
-                <dd>${total}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-gray-600">Shipping</dt>
-                <dd>$5</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-gray-600">Taxes</dt>
-                <dd>${total / 5}</dd>
-              </div>
-              <div className="flex items-center justify-between border-t border-gray-200 pt-6">
-                <dt className="text-base">Total</dt>
-                <dd className="text-base">
-                  ${total === 0 ? 0 : Math.round(total + total / 5 + 5)}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </section>
-
-        <form className="px-4 pt-16 sm:px-6 lg:col-start-1 lg:row-start-1 lg:px-0">
-          <div className="mx-auto max-w-lg lg:max-w-none">
-            {/* Contact Information */}
-            <section aria-labelledby="contact-info-heading">
-              <h2
-                id="contact-info-heading"
-                className="text-lg font-medium text-gray-900"
-              >
-                Contact information
-              </h2>
-
-              <div className="mt-6">
-                <label
-                  htmlFor="name-input"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Name * (min 2 characters)
-                </label>
-                <div className="mt-1">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Left Form Panel */}
+        <div className="lg:col-span-8 bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
+          {step === 1 && (
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-gray-900 border-b pb-3">Shipping Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700">First Name *</label>
                   <input
+                    type="text"
+                    name="name"
                     value={checkoutForm.name}
-                    onChange={(e) =>
-                      setCheckoutForm({
-                        ...checkoutForm,
-                        name: e.target.value,
-                      })
-                    }
-                    type="text"
-                    id="name-input"
-                    name="name-input"
-                    autoComplete="given-name"
-                    required
-                    disabled={isSubmitting}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    onChange={handleInputChange}
+                    className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
                   />
                 </div>
-              </div>
-
-              <div className="mt-6">
-                <label
-                  htmlFor="lastname-input"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Lastname * (min 2 characters)
-                </label>
-                <div className="mt-1">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700">Last Name *</label>
                   <input
+                    type="text"
+                    name="lastname"
                     value={checkoutForm.lastname}
-                    onChange={(e) =>
-                      setCheckoutForm({
-                        ...checkoutForm,
-                        lastname: e.target.value,
-                      })
-                    }
+                    onChange={handleInputChange}
+                    className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700">Phone Number *</label>
+                  <input
                     type="text"
-                    id="lastname-input"
-                    name="lastname-input"
-                    autoComplete="family-name"
-                    required
-                    disabled={isSubmitting}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label
-                  htmlFor="phone-input"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Phone number * (min 10 digits)
-                </label>
-                <div className="mt-1">
-                  <input
+                    name="phone"
                     value={checkoutForm.phone}
-                    onChange={(e) =>
-                      setCheckoutForm({
-                        ...checkoutForm,
-                        phone: e.target.value,
-                      })
-                    }
-                    type="tel"
-                    id="phone-input"
-                    name="phone-input"
-                    autoComplete="tel"
-                    required
-                    disabled={isSubmitting}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    onChange={handleInputChange}
+                    className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
                   />
                 </div>
-              </div>
-
-              <div className="mt-6">
-                <label
-                  htmlFor="email-address"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Email address *
-                </label>
-                <div className="mt-1">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700">Email Address *</label>
                   <input
-                    value={checkoutForm.email}
-                    onChange={(e) =>
-                      setCheckoutForm({
-                        ...checkoutForm,
-                        email: e.target.value,
-                      })
-                    }
                     type="email"
-                    id="email-address"
-                    name="email-address"
-                    autoComplete="email"
-                    required
-                    disabled={isSubmitting}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    name="email"
+                    value={checkoutForm.email}
+                    onChange={handleInputChange}
+                    className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
                   />
                 </div>
               </div>
-            </section>
-
-            {/* Payment Notice */}
-            <section className="mt-10">
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">
-                      Payment Information
-                    </h3>
-                    <div className="mt-2 text-sm text-blue-700">
-                      <p>Payment will be processed after order confirmation. You will be contacted for payment details.</p>
-                    </div>
-                  </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">Street Address *</label>
+                <input
+                  type="text"
+                  name="adress"
+                  placeholder="House number and street name"
+                  value={checkoutForm.adress}
+                  onChange={handleInputChange}
+                  className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700">Apartment / Suite</label>
+                  <input
+                    type="text"
+                    name="apartment"
+                    value={checkoutForm.apartment}
+                    onChange={handleInputChange}
+                    className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700">Company Name</label>
+                  <input
+                    type="text"
+                    name="company"
+                    value={checkoutForm.company}
+                    onChange={handleInputChange}
+                    className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700">Postal / Zip Code *</label>
+                  <input
+                    type="text"
+                    name="postalCode"
+                    value={checkoutForm.postalCode}
+                    onChange={handleInputChange}
+                    className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  />
                 </div>
               </div>
-            </section>
-
-            {/* Shipping Address */}
-            <section aria-labelledby="shipping-heading" className="mt-10">
-              <h2
-                id="shipping-heading"
-                className="text-lg font-medium text-gray-900"
-              >
-                Shipping address
-              </h2>
-
-              <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-3">
-                <div className="sm:col-span-3">
-                  <label
-                    htmlFor="company"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Company *
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      id="company"
-                      name="company"
-                      required
-                      disabled={isSubmitting}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      value={checkoutForm.company}
-                      onChange={(e) =>
-                        setCheckoutForm({
-                          ...checkoutForm,
-                          company: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label
-                    htmlFor="address"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Address *
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      autoComplete="street-address"
-                      required
-                      disabled={isSubmitting}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      value={checkoutForm.adress}
-                      onChange={(e) =>
-                        setCheckoutForm({
-                          ...checkoutForm,
-                          adress: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label
-                    htmlFor="apartment"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Apartment, suite, etc. * (required)
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      id="apartment"
-                      name="apartment"
-                      required
-                      disabled={isSubmitting}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      value={checkoutForm.apartment}
-                      onChange={(e) =>
-                        setCheckoutForm({
-                          ...checkoutForm,
-                          apartment: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label
-                    htmlFor="city"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    City *
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      id="city"
-                      name="city"
-                      autoComplete="address-level2"
-                      required
-                      disabled={isSubmitting}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      value={checkoutForm.city}
-                      onChange={(e) =>
-                        setCheckoutForm({
-                          ...checkoutForm,
-                          city: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
+                  <label className="block text-sm font-semibold text-gray-700">Town / City *</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={checkoutForm.city}
+                    onChange={handleInputChange}
+                    className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  />
                 </div>
-
                 <div>
-                  <label
-                    htmlFor="region"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Country *
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      id="region"
-                      name="region"
-                      autoComplete="address-level1"
-                      required
-                      disabled={isSubmitting}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      value={checkoutForm.country}
-                      onChange={(e) =>
-                        setCheckoutForm({
-                          ...checkoutForm,
-                          country: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="postal-code"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Postal code *
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      id="postal-code"
-                      name="postal-code"
-                      autoComplete="postal-code"
-                      required
-                      disabled={isSubmitting}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      value={checkoutForm.postalCode}
-                      onChange={(e) =>
-                        setCheckoutForm({
-                          ...checkoutForm,
-                          postalCode: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label
-                    htmlFor="order-notice"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Order notice
-                  </label>
-                  <div className="mt-1">
-                    <textarea
-                      className="textarea textarea-bordered textarea-lg w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      id="order-notice"
-                      name="order-notice"
-                      autoComplete="order-notice"
-                      disabled={isSubmitting}
-                      value={checkoutForm.orderNotice}
-                      onChange={(e) =>
-                        setCheckoutForm({
-                          ...checkoutForm,
-                          orderNotice: e.target.value,
-                        })
-                      }
-                    ></textarea>
-                  </div>
+                  <label className="block text-sm font-semibold text-gray-700">Country *</label>
+                  <input
+                    type="text"
+                    name="country"
+                    value={checkoutForm.country}
+                    onChange={handleInputChange}
+                    className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  />
                 </div>
               </div>
-            </section>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">Order Notes (Optional)</label>
+                <textarea
+                  name="orderNotice"
+                  rows={4}
+                  placeholder="Special instructions for delivery."
+                  value={checkoutForm.orderNotice}
+                  onChange={handleInputChange}
+                  className="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                />
+              </div>
+              <div className="flex justify-end pt-4">
+                <button
+                  type="button"
+                  onClick={() => validateShipping() && setStep(2)}
+                  className="px-6 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-md transition-colors"
+                >
+                  Continue to Payment
+                </button>
+              </div>
+            </div>
+          )}
 
-            <div className="mt-10 border-t border-gray-200 pt-6 ml-0">
-              <button
-                type="button"
-                onClick={makePurchase}
-                disabled={isSubmitting}
-                className="w-full rounded-md border border-transparent bg-blue-500 px-20 py-2 text-lg font-medium text-white shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 focus:ring-offset-gray-50 sm:order-last disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? "Processing Order..." : "Place Order"}
-              </button>
+          {step === 2 && (
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-gray-900 border-b pb-3">Payment Method</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("stripe")}
+                  className={`p-6 rounded-2xl border-2 text-left flex flex-col justify-between h-40 transition-all ${
+                    paymentMethod === "stripe"
+                      ? "border-indigo-600 bg-indigo-50/50 shadow-md"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
+                  }`}
+                >
+                  <div className="flex justify-between items-center w-full">
+                    <span className="text-lg font-bold text-gray-900">Secure Online Card</span>
+                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === "stripe" ? "border-indigo-600" : "border-gray-300"
+                    }`}>
+                      {paymentMethod === "stripe" && <span className="w-2 h-2 rounded-full bg-indigo-600" />}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">Pay instantly using credit/debit card. Fully encrypted and protected by Stripe.</p>
+                  <div className="flex space-x-2">
+                    <span className="px-2 py-0.5 bg-white text-xs font-bold text-indigo-600 rounded border">VISA</span>
+                    <span className="px-2 py-0.5 bg-white text-xs font-bold text-indigo-600 rounded border">MASTERCARD</span>
+                    <span className="px-2 py-0.5 bg-white text-xs font-bold text-indigo-600 rounded border">AMEX</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("cod")}
+                  className={`p-6 rounded-2xl border-2 text-left flex flex-col justify-between h-40 transition-all ${
+                    paymentMethod === "cod"
+                      ? "border-indigo-600 bg-indigo-50/50 shadow-md"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
+                  }`}
+                >
+                  <div className="flex justify-between items-center w-full">
+                    <span className="text-lg font-bold text-gray-900">Cash on Delivery</span>
+                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === "cod" ? "border-indigo-600" : "border-gray-300"
+                    }`}>
+                      {paymentMethod === "cod" && <span className="w-2 h-2 rounded-full bg-indigo-600" />}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">Pay with cash when the courier driver delivers the package to your doorstep.</p>
+                  <span className="px-2 py-0.5 bg-white text-xs font-bold text-emerald-600 rounded border border-emerald-200 self-start">ZERO FEES</span>
+                </button>
+              </div>
+
+              <div className="flex justify-between pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="px-6 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-colors"
+                >
+                  Back to Address
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="px-6 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-md transition-colors"
+                >
+                  Review Order Details
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <form onSubmit={handleSubmitOrder} className="space-y-6">
+              <h3 className="text-2xl font-bold text-gray-900 border-b pb-3">Finalize Purchase</h3>
+              
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-4">
+                <h4 className="font-bold text-gray-900">Delivery Address Summary</h4>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {checkoutForm.name} {checkoutForm.lastname} <br />
+                  {checkoutForm.company && `${checkoutForm.company}, `} {checkoutForm.adress} {checkoutForm.apartment && `, ${checkoutForm.apartment}`} <br />
+                  {checkoutForm.city}, {checkoutForm.country} - {checkoutForm.postalCode} <br />
+                  Phone: {checkoutForm.phone}
+                </p>
+              </div>
+
+              {paymentMethod === "stripe" ? (
+                <div className="space-y-4">
+                  <h4 className="font-bold text-gray-900">Enter Credit/Debit Card Details</h4>
+                  <div className="p-4 rounded-xl border border-gray-200 bg-gray-50 shadow-inner">
+                    <CardElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: "16px",
+                            color: "#1f2937",
+                            fontFamily: "Outfit, Inter, sans-serif",
+                            "::placeholder": {
+                              color: "#9ca3af",
+                            },
+                          },
+                          invalid: {
+                            color: "#dc2626",
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400">Your connection is fully secure and encrypted. We do not store your credit card digits.</p>
+                </div>
+              ) : (
+                <div className="p-6 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900">
+                  <h4 className="font-bold mb-2">Cash on Delivery details</h4>
+                  <p className="text-sm">You selected Cash on Delivery. You will pay <strong>${Math.round(discountedTotal)}</strong> directly to our delivery courier in cash upon receiving your electronic items at your home address.</p>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="px-6 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  Back to Payment
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-8 py-3 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg disabled:opacity-50 transition-all flex items-center space-x-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white border-solid"></div>
+                      <span>Processing Order...</span>
+                    </>
+                  ) : (
+                    <span>Pay & Complete Purchase (${Math.round(discountedTotal)})</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+
+        {/* Right Order Summary Panel */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+            <h3 className="text-xl font-bold text-gray-900 border-b pb-2">Order Summary</h3>
+            <div className="divide-y max-h-60 overflow-y-auto pr-1">
+              {products.map((item) => (
+                <div key={item.id} className="flex py-3 space-x-4">
+                  <div className="relative w-12 h-12 rounded-lg border overflow-hidden bg-gray-50 flex-shrink-0">
+                    <Image src={item.image} alt={item.title} fill className="object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-semibold text-gray-900 truncate">{item.title}</h4>
+                    <p className="text-xs text-gray-500">Qty: {item.amount}</p>
+                  </div>
+                  <span className="text-sm font-bold text-gray-950">${item.price * item.amount}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Coupons Form */}
+            <div className="pt-4 border-t space-y-3">
+              <label className="block text-sm font-semibold text-gray-700">Have a promo code?</label>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  placeholder="e.g. WELCOME20"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={handleCouponApply}
+                  className="px-4 py-1.5 bg-gray-950 text-white font-semibold text-sm rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+              <p className="text-xs text-gray-400">Try <strong>ARSLAN20</strong> for an instant 20% discount!</p>
+            </div>
+
+            {/* Costs Breakdown */}
+            <div className="pt-4 border-t space-y-2 text-sm">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal</span>
+                <span>${total}</span>
+              </div>
+              {discountPercent > 0 && (
+                <div className="flex justify-between text-emerald-600 font-medium">
+                  <span>Discount ({discountPercent}%)</span>
+                  <span>-${(total * discountPercent) / 100}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-gray-600">
+                <span>Shipping Fee</span>
+                <span className="text-emerald-600 font-semibold">FREE</span>
+              </div>
+              <div className="flex justify-between text-lg font-black text-gray-950 pt-2 border-t">
+                <span>Total Amount</span>
+                <span>${Math.round(discountedTotal)}</span>
+              </div>
             </div>
           </div>
-        </form>
-      </main>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CheckoutPage = () => {
+  return (
+    <div className="bg-slate-50 min-h-screen">
+      <SectionTitle title="Checkout" path="Home | Checkout" />
+      <Elements stripe={stripePromise}>
+        <CheckoutFormInner />
+      </Elements>
     </div>
   );
 };

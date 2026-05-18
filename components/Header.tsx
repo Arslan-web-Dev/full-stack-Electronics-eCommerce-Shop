@@ -1,87 +1,76 @@
-
 "use client";
 import { usePathname } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import HeaderTop from "./HeaderTop";
 import Image from "next/image";
 import SearchInput from "./SearchInput";
 import Link from "next/link";
-import { FaBell } from "react-icons/fa6";
-
-import CartElement from "./CartElement";
 import NotificationBell from "./NotificationBell";
 import HeartElement from "./HeartElement";
-import { createClient } from "@/utils/supabase/client";
+import CartElement from "./CartElement";
 import toast from "react-hot-toast";
 import { useWishlistStore } from "@/app/_zustand/wishlistStore";
+import { useAuthStore } from "@/app/_zustand/authStore";
 import apiClient from "@/lib/api";
 
-const supabase = createClient();
-
 const Header = () => {
-  const [session, setSession] = useState<any>(null);
   const pathname = usePathname();
   const { wishlist, setWishlist, wishQuantity } = useWishlistStore();
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { user, isAuthenticated, logout } = useAuthStore();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await apiClient.post("/api/auth/logout");
+    } catch (e) {
+      console.warn("Logout endpoint call failed:", e);
+    }
+    logout();
     toast.success("Logout successful!");
     window.location.href = "/";
   };
 
   // getting all wishlist items by user id
   const getWishlistByUserId = async (id: string) => {
-    const response = await apiClient.get(`/api/wishlist/${id}`, {
-      cache: "no-store",
-    });
-    const wishlist = await response.json();
-    const productArray: {
-      id: string;
-      title: string;
-      price: number;
-      image: string;
-      slug:string
-      stockAvailabillity: number;
-    }[] = [];
-
-    return; // temporary disable wishlist fetching while the issue is being resolved
-    
-    wishlist.map((item: any) => productArray.push({id: item?.product?.id, title: item?.product?.title, price: item?.product?.price, image: item?.product?.mainImage, slug: item?.product?.slug, stockAvailabillity: item?.product?.inStock}));
-    
-    setWishlist(productArray);
-  };
-
-  // getting user by email so I can get his user id
-  const getUserByEmail = async () => {
-    if (session?.user?.email) {
-      
-      apiClient.get(`/api/users/email/${session?.user?.email}`, {
+    try {
+      const response = await apiClient.get(`/api/wishlist/${id}`, {
         cache: "no-store",
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          getWishlistByUserId(data?.id);
+      });
+      if (response.ok) {
+        const wishlistData = await response.json();
+        const productArray: {
+          id: string;
+          title: string;
+          price: number;
+          image: string;
+          slug: string;
+          stockAvailabillity: number;
+        }[] = [];
+
+        wishlistData.forEach((item: any) => {
+          if (item?.product) {
+            productArray.push({
+              id: item.product.id,
+              title: item.product.title,
+              price: item.product.price,
+              image: item.product.mainImage,
+              slug: item.product.slug,
+              stockAvailabillity: item.product.inStock,
+            });
+          }
         });
+        
+        setWishlist(productArray);
+      }
+    } catch (error) {
+      console.error("Error fetching wishlist:", error);
     }
   };
 
   useEffect(() => {
-    getUserByEmail();
-  }, [session?.user?.email, wishlist.length]);
+    if (isAuthenticated && user?.id) {
+      getWishlistByUserId(user.id);
+    }
+  }, [isAuthenticated, user?.id, wishlist.length]);
 
   return (
     <header className="sticky top-0 z-50 w-full transition-all duration-300">
@@ -100,6 +89,12 @@ const Header = () => {
             <nav className="hidden lg:flex gap-x-6 mr-4 font-semibold text-slate-700">
               <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
               <Link href="/shop" className="hover:text-blue-600 transition-colors">Shop</Link>
+              {user?.role === "admin" && (
+                <Link href="/admin" className="hover:text-blue-600 transition-colors text-red-600">Admin Dashboard</Link>
+              )}
+              {isAuthenticated && (
+                <Link href="/buyer-dashboard" className="hover:text-blue-600 transition-colors text-blue-600">My Dashboard</Link>
+              )}
               <Link href="/creator" className="hover:text-blue-600 transition-colors text-purple-600">Meet Creator</Link>
             </nav>
             <NotificationBell />
@@ -109,40 +104,36 @@ const Header = () => {
         </div>
       )}
       {pathname.startsWith("/admin") === true && (
-        <div className="flex justify-between h-32 bg-white items-center px-16 max-[1320px]:px-10  max-w-screen-2xl mx-auto max-[400px]:px-5">
-          <Link href="/">
-            <Image
-              src="/logo v1.png"
-              width={130}
-              height={130}
-              alt="Arslan Electronics logo"
-              className="w-56 h-auto"
-            />
+        <div className="flex justify-between h-32 bg-white items-center px-16 max-[1320px]:px-10  max-w-screen-2xl mx-auto max-[400px]:px-5 border-b border-gray-100 shadow-sm">
+          <Link href="/" className="hover:opacity-80 transition-opacity flex items-center gap-x-2">
+            <span className="text-3xl font-black tracking-tighter text-slate-900">
+              ARSLAN <span className="text-blue-600">ELECTRONICS</span>
+            </span>
           </Link>
           <div className="flex gap-x-5 items-center">
             <NotificationBell />
             <div className="dropdown dropdown-end">
-              <div tabIndex={0} role="button" className="w-10">
+              <div tabIndex={0} role="button" className="w-10 h-10 border border-gray-200 rounded-full overflow-hidden shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all">
                 <Image
                   src="/randomuser.jpg"
-                  alt="random profile photo"
-                  width={30}
-                  height={30}
-                  className="w-full h-full rounded-full"
+                  alt="profile photo"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover"
                 />
               </div>
               <ul
                 tabIndex={0}
-                className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
+                className="dropdown-content z-[1] menu p-2 shadow-xl bg-white rounded-box w-52 border border-gray-100 mt-2"
               >
                 <li>
-                  <Link href="/admin">Dashboard</Link>
+                  <Link href="/admin" className="font-semibold text-slate-700">Admin Panel</Link>
                 </li>
                 <li>
-                  <a>Profile</a>
+                  <Link href="/buyer-dashboard" className="font-semibold text-slate-700">Buyer Dashboard</Link>
                 </li>
                 <li onClick={handleLogout}>
-                  <a href="#">Logout</a>
+                  <button className="font-semibold text-red-600">Logout</button>
                 </li>
               </ul>
             </div>

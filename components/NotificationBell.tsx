@@ -1,31 +1,17 @@
-'use client';
+"use client";
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { FaBell } from 'react-icons/fa6';
 import { useUnreadCount } from '@/hooks/useNotifications';
-import { createClient } from "@/utils/supabase/client";
-
-const supabase = createClient();
+import { useAuthStore } from '@/app/_zustand/authStore';
 
 interface NotificationBellProps {
   className?: string;
 }
 
 const NotificationBell: React.FC<NotificationBellProps> = ({ className = "" }) => {
-  const [session, setSession] = useState<any>(null);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-      }
-    );
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  const { isAuthenticated } = useAuthStore();
   const { unreadCount } = useUnreadCount();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -43,7 +29,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className = "" }) =
   }, []);
 
   // Don't show notification bell if user is not logged in
-  if (!session?.user) {
+  if (!isAuthenticated) {
     return null;
   }
 

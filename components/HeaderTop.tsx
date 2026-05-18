@@ -1,38 +1,27 @@
-
 "use client";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import toast from "react-hot-toast";
-import { FaHeadphones } from "react-icons/fa6";
-import { FaRegEnvelope } from "react-icons/fa6";
-import { FaLocationDot } from "react-icons/fa6";
-import { FaRegUser } from "react-icons/fa6";
-import { createClient } from "@/utils/supabase/client";
-
-const supabase = createClient();
+import { FaHeadphones, FaRegEnvelope, FaRegUser, FaSun, FaMoon } from "react-icons/fa6";
+import { useAuthStore } from "@/app/_zustand/authStore";
+import { useTheme } from "@/Providers";
+import apiClient from "@/lib/api";
 
 const HeaderTop = () => {
-  const [session, setSession] = useState<any>(null);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const { isDark, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await apiClient.post("/api/auth/logout");
+    } catch (e) {
+      console.warn("Logout endpoint call failed:", e);
+    }
+    logout();
     toast.success("Logout successful!");
     window.location.href = "/";
   };
+
   return (
     <div className="h-10 text-white bg-slate-900 max-lg:px-5 max-lg:h-16 max-[573px]:px-0 border-b border-slate-800">
       <div className="flex justify-between h-full max-lg:flex-col max-lg:justify-center max-lg:items-center max-w-screen-2xl mx-auto px-12 max-[573px]:px-0">
@@ -49,7 +38,17 @@ const HeaderTop = () => {
           </li>
         </ul>
         <ul className="flex items-center gap-x-5 h-full max-[370px]:text-sm max-[370px]:gap-x-2 font-semibold">
-          {!session ? ( 
+          <li className="flex items-center">
+            <button 
+              onClick={toggleTheme} 
+              className="flex items-center gap-x-2 text-slate-100 hover:text-blue-400 transition-colors focus:outline-none"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? <FaSun className="text-yellow-400 text-lg" /> : <FaMoon className="text-indigo-400 text-lg" />}
+              <span className="hidden sm:inline">{isDark ? "Light Mode" : "Dark Mode"}</span>
+            </button>
+          </li>
+          {!isAuthenticated ? ( 
           <>
           <li className="flex items-center">
             <Link href="/login" className="flex items-center gap-x-2 font-semibold">
@@ -65,9 +64,9 @@ const HeaderTop = () => {
           </li>
           </>
           ) :  (<>
-          <span className="ml-10 text-base">{session.user?.email}</span>
+          <span className="text-sm font-normal text-slate-300">{user?.email}</span>
           <li className="flex items-center">
-            <button onClick={() => handleLogout()} className="flex items-center gap-x-2 font-semibold">
+            <button onClick={() => handleLogout()} className="flex items-center gap-x-2 font-semibold text-slate-100 hover:text-red-400 transition-colors">
               <FaRegUser className="text-white" />
               <span>Log out</span>
             </button>

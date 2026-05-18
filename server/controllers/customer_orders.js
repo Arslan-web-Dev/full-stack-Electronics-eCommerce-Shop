@@ -406,10 +406,47 @@ async function getAllOrders(request, response) {
   }
 }
 
+async function getOrdersByUserEmail(request, response) {
+  try {
+    const { email } = request.params;
+    if (!email || typeof email !== 'string') {
+      return response.status(400).json({
+        error: "Invalid email",
+        details: "Email parameter must be provided"
+      });
+    }
+
+    const orders = await prisma.customer_order.findMany({
+      where: {
+        email: email.trim().toLowerCase()
+      },
+      include: {
+        products: {
+          include: {
+            product: true
+          }
+        }
+      },
+      orderBy: {
+        dateTime: 'desc'
+      }
+    });
+
+    return response.status(200).json(orders);
+  } catch (error) {
+    console.error("Error fetching orders by email:", error);
+    return response.status(500).json({
+      error: "Internal server error",
+      details: "Failed to fetch orders. Please try again later."
+    });
+  }
+}
+
 module.exports = {
   createCustomerOrder,
   updateCustomerOrder,
   deleteCustomerOrder,
   getCustomerOrder,
   getAllOrders,
+  getOrdersByUserEmail,
 };

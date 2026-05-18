@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationType } from '@/types/notification';
 import NotificationCard from '@/components/NotificationCard';
 import { useNotificationStore } from '@/app/_zustand/notificationStore';
+import { useAuthStore } from '@/app/_zustand/authStore';
 import { 
   FaSearch, 
   FaFilter, 
@@ -16,26 +16,10 @@ import {
   FaBell 
 } from 'react-icons/fa';
 
-const supabase = createClient();
-
 const NotificationsPage = () => {
-  const [session, setSession] = useState<any>(null);
-  const [authStatus, setAuthStatus] = useState('loading');
   const router = useRouter();
+  const { user, isAuthenticated, loading: authLoading } = useAuthStore();
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setAuthStatus(session ? 'authenticated' : 'unauthenticated');
-      }
-    );
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setAuthStatus(session ? 'authenticated' : 'unauthenticated');
-    });
-    return () => subscription.unsubscribe();
-  }, []);
   const {
     notifications,
     total,
@@ -64,12 +48,10 @@ const NotificationsPage = () => {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (authStatus === 'loading') return;
-    if (!session) {
+    if (!authLoading && !isAuthenticated) {
       router.push('/login');
-      return;
     }
-  }, [session, authStatus, router]);
+  }, [isAuthenticated, authLoading, router]);
 
   // Sync local state with store filters
   useEffect(() => {
@@ -82,10 +64,10 @@ const NotificationsPage = () => {
 
   // Initial fetch
   useEffect(() => {
-    if (session) {
+    if (isAuthenticated) {
       fetchNotifications();
     }
-  }, [session, fetchNotifications]);
+  }, [isAuthenticated, fetchNotifications]);
 
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
@@ -138,16 +120,16 @@ const NotificationsPage = () => {
   };
 
   // Loading state
-  if (authStatus === 'loading') {
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <FaSpinner className="animate-spin text-4xl text-blue-500" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600 border-solid"></div>
       </div>
     );
   }
 
   // Not authenticated
-  if (!session) {
+  if (!isAuthenticated) {
     return null;
   }
 

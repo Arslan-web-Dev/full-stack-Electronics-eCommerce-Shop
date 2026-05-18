@@ -7,12 +7,16 @@ const {
     createCustomerOrder,
     updateCustomerOrder,
     deleteCustomerOrder,
-    getAllOrders 
+    getAllOrders,
+    getOrdersByUserEmail
   } = require('../controllers/customer_orders');
 
   router.route('/')
   .get(getAllOrders)
   .post(createCustomerOrder);
+
+  router.route('/user/:email')
+  .get(getOrdersByUserEmail);
 
   router.route('/:id')
   .get(getCustomerOrder)

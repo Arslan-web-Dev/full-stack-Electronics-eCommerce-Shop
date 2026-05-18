@@ -4,7 +4,31 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased transition-colors duration-300;
+  }
+  
+  html.dark body {
+    @apply bg-slate-950 text-slate-100;
+  }
+}
+
+/* Premium Page Transitions and Micro-Scale Animations */
+.page-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.micro-scale-hover {
+  @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-md;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -54,4 +78,12 @@
         transparent 40.99%
       ),
       linear-gradient(-45deg, white 50%, #0ea5e9 50.99%);
+}
+
+html.dark ::-webkit-scrollbar-track {
+  @apply bg-slate-900;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  @apply bg-slate-700 hover:bg-slate-600 transition-colors;
 }

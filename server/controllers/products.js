@@ -441,6 +441,48 @@ const getProductById = asyncHandler(async (request, response) => {
   return response.status(200).json(product);
 });
 
+const getProductRecommendations = asyncHandler(async (request, response) => {
+  const { productId } = request.query;
+
+  let recommendations = [];
+
+  if (productId) {
+    // 1. Get the current product to find its category
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (product) {
+      // 2. Fetch other products in the same category, ordered by rating descending
+      recommendations = await prisma.product.findMany({
+        where: {
+          categoryId: product.categoryId,
+          id: { not: productId }, // exclude current product
+        },
+        take: 4,
+        orderBy: { rating: "desc" },
+      });
+    }
+  }
+
+  // 3. Fallback: if not enough recommendations, pad with top rated products globally
+  if (recommendations.length < 4) {
+    const excludeIds = productId ? [productId] : [];
+    recommendations.forEach(r => excludeIds.push(r.id));
+
+    const fallbackProducts = await prisma.product.findMany({
+      where: {
+        id: { notIn: excludeIds },
+      },
+      take: 4 - recommendations.length,
+      orderBy: { rating: "desc" },
+    });
+    recommendations = [...recommendations, ...fallbackProducts];
+  }
+
+  return response.json(recommendations);
+});
+
 module.exports = {
   getAllProducts,
   createProduct,
@@ -448,4 +490,5 @@ module.exports = {
   deleteProduct,
   searchProducts,
   getProductById,
+  getProductRecommendations,
 };

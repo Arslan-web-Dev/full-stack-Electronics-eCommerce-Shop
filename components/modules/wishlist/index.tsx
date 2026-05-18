@@ -3,62 +3,55 @@ import { useWishlistStore } from "@/app/_zustand/wishlistStore";
 import WishItem from "@/components/WishItem";
 import apiClient from "@/lib/api";
 import { nanoid } from "nanoid";
-import { createClient } from "@/utils/supabase/client";
-import { useEffect, useState } from "react";
-
-const supabase = createClient();
+import { useAuthStore } from "@/app/_zustand/authStore";
+import { useEffect } from "react";
 
 export const WishlistModule = () => {
-  const [session, setSession] = useState<any>(null);
   const { wishlist, setWishlist } = useWishlistStore();
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-      }
-    );
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  const { user, isAuthenticated } = useAuthStore();
 
   const getWishlistByUserId = async (id: string) => {
-    const response = await apiClient.get(`/api/wishlist/${id}`, {
-      cache: "no-store",
-    });
-    const wishlist = await response.json();
-
-    const productArray: {
-      id: string;
-      title: string;
-      price: number;
-      image: string;
-      slug: string
-      stockAvailabillity: number;
-    }[] = [];
-
-    wishlist.map((item: any) => productArray.push({ id: item?.product?.id, title: item?.product?.title, price: item?.product?.price, image: item?.product?.mainImage, slug: item?.product?.slug, stockAvailabillity: item?.product?.inStock }));
-
-    setWishlist(productArray);
-  };
-
-  const getUserByEmail = async () => {
-    if (session?.user?.email) {
-      apiClient.get(`/api/users/email/${session?.user?.email}`, {
+    try {
+      const response = await apiClient.get(`/api/wishlist/${id}`, {
         cache: "no-store",
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          getWishlistByUserId(data?.id);
+      });
+      if (response.ok) {
+        const wishlistData = await response.json();
+
+        const productArray: {
+          id: string;
+          title: string;
+          price: number;
+          image: string;
+          slug: string;
+          stockAvailabillity: number;
+        }[] = [];
+
+        wishlistData.forEach((item: any) => {
+          if (item?.product) {
+            productArray.push({
+              id: item.product.id,
+              title: item.product.title,
+              price: item.product.price,
+              image: item.product.mainImage,
+              slug: item.product.slug,
+              stockAvailabillity: item.product.inStock,
+            });
+          }
         });
+
+        setWishlist(productArray);
+      }
+    } catch (e) {
+      console.error("Error loading wishlist:", e);
     }
   };
 
   useEffect(() => {
-    getUserByEmail();
-  }, [session?.user?.email, wishlist.length]);
+    if (isAuthenticated && user?.id) {
+      getWishlistByUserId(user.id);
+    }
+  }, [isAuthenticated, user?.id, wishlist.length]);
   return (
     <>
 

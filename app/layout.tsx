@@ -21,11 +21,11 @@ export default async function RootLayout({
   return (
     <html lang="en" data-theme="light">
       <body className={inter.className}>
-        <Header />
         <Providers>
+          <Header />
           {children}
+          <Footer />
         </Providers>
-        <Footer />
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { 
   FaArrowUp, 
   FaShoppingBag, 
@@ -108,7 +109,12 @@ const AdminDashboardPage = () => {
         {/* Header Section */}
         <div className="flex justify-between items-center max-sm:flex-col max-sm:items-start max-sm:gap-y-3">
           <div>
-            <h1 className="text-3xl font-black text-gray-900">Arslan Store Administration</h1>
+            <div className="flex items-center gap-x-3 flex-wrap">
+              <h1 className="text-3xl font-black text-gray-900">Arslan Store Administration</h1>
+              <Link href="/admin/products/new" className="flex items-center gap-x-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                <FaPlus className="text-2xs" /> Add New Product
+              </Link>
+            </div>
             <p className="text-sm text-gray-500">Monitor warehouse sales, moderate content, and control promo coupons.</p>
           </div>
           

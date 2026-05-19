@@ -91,7 +91,7 @@ const Header = () => {
               <Link href="/shop" className="hover:text-blue-600 transition-colors">Shop</Link>
               {user?.role === "admin" && (
                 <>
-                  <Link href="/admin/control-panel" className="hover:text-blue-600 transition-colors text-red-600 font-bold">Control Panel</Link>
+                  <Link href="/control-panel" className="hover:text-blue-600 transition-colors text-red-600 font-bold">Control Panel</Link>
                   <Link href="/admin" className="hover:text-blue-600 transition-colors text-red-600">Admin Dashboard</Link>
                 </>
               )}
